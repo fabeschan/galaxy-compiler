@@ -5,4 +5,5 @@ int func(int arg, int arg2){
 void main(){
     int a = 1;
     1 + 3;
+    a.out = 1 + b.kiss();
 }
