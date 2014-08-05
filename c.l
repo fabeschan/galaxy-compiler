@@ -27,7 +27,7 @@ printf      { printf("%d: Found keyword: %s\n", linenum, yytext); return PRINTF;
 struct      { printf("%d: Found keyword: %s\n", linenum, yytext); return STRUCT; }
 ^"#include ".+      ;
 {digit}+    { printf("%d: Found a num: %s\n", linenum, yytext); return NUM; }
-{alpha}({alpha}|{digit})*       return ID;
+{alpha}({alpha}|{digit})*       { printf("%d: Found ID: %s\n", linenum, yytext); return ID; }
 "<="        { printf("%d: Found an op: %s\n", linenum, yytext); return LE; }
 ">="        { printf("%d: Found an op: %s\n", linenum, yytext); return GE; }
 "=="        { printf("%d: Found an op: %s\n", linenum, yytext); return EQ; }
