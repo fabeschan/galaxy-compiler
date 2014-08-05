@@ -7,7 +7,8 @@ using namespace std;
 extern "C" int yylex();
 extern "C" int yyparse();
 extern "C" FILE *yyin;
- 
+extern int linenum; 
+extern char* yytext;
 void yyerror(const char *s);
 %}
 
@@ -46,6 +47,7 @@ snazzle:
 int main(int argc, char *argv[]) {
     // open a file handle to a particular file:
     FILE *myfile = fopen(argv[1], "r");
+
     // make sure it is valid:
     if (!myfile) {
         cout << "Error: cannot open file" << endl;
@@ -63,7 +65,7 @@ int main(int argc, char *argv[]) {
 }
 
 void yyerror(const char *s) {
-    cout << "EEK, parse error!  Message: " << s << endl;
+    printf("%d: parse error: %s %s\n", linenum, s, yytext);
     // might as well halt now:
     exit(-1);
 }
