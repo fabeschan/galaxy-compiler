@@ -33,7 +33,7 @@ extern void yyerror(const char *);  /* prints grammar violation message */
 
 extern int sym_type(const char *);  /* returns type from symbol table */
 
-#define sym_type(identifier) IDENTIFIER /* with no symbol table, fake it */
+//#define sym_type(identifier) IDENTIFIER /* with no symbol table, fake it */
 
 static void comment(void);
 static int check_type(void);
@@ -64,7 +64,7 @@ digit [0-9]
 } { /* return (COMMENT); */ }
 "//".*                                    { /* consume //-comment */ }
 
-"auto"                  { DISABLED(); }
+"auto"                  { TOKEN(AUTO); }
 "break"                 { TOKEN(BREAK); }
 "case"                  { TOKEN(CASE); }
 "char"                  { TOKEN(CHAR); }
@@ -112,9 +112,9 @@ digit [0-9]
 
 {L}{A}*                 { return check_type(); }
 
-{HP}{H}+{IS}?               { return I_CONSTANT; }
-{NZ}{D}*{IS}?               { return I_CONSTANT; }
-"0"{O}*{IS}?                { return I_CONSTANT; }
+{HP}{H}+{IS}?               { return I_CONSTANT; }      /* hex integer */
+{NZ}{D}*{IS}?               { return I_CONSTANT; }      /* dec integer */
+"0"{O}*{IS}?                { return I_CONSTANT; }      /* oct integer */
 {CP}?"'"([^'\\\n]|{ES})+"'"     { return I_CONSTANT; }
 
 {D}+{E}{FS}?                { return F_CONSTANT; }

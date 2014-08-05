@@ -1,6 +1,8 @@
 %{
 #include <cstdio>
 #include <iostream>
+#include <vector>
+#include <string>
 using namespace std;
 
 // stuff from flex that bison needs to know about:
@@ -9,7 +11,10 @@ extern "C" int yyparse();
 extern "C" FILE *yyin;
 extern int linenum; 
 extern char* yytext;
+
+vector<string> typedef_table;
 void yyerror(const char *s);
+int sym_type(const char *);
 %}
 
 %token  IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME SIZEOF
@@ -539,13 +544,6 @@ declaration_list
     ;
 
 %%
-//#include <stdio.h>
-
-//void yyerror(const char *s)
-//{
-//    fflush(stdout);
-//    fprintf(stderr, "*** %s\n", s);
-//}
 
 int main(int argc, char *argv[]) {
     // open a file handle to a particular file:
@@ -572,4 +570,12 @@ void yyerror(const char *s) {
     printf("%d: parse error: %s %s\n", linenum, s, yytext);
     // might as well halt now:
     exit(-1);
+}
+
+int sym_type(const char *s){
+    string str = string(s);
+    for (vector<string>::iterator it = typedef_table.begin(); it != typedef_table.end(); ++it){
+        if (str == *it) return TYPEDEF_NAME;
+    }
+    return IDENTIFIER;
 }
