@@ -21,6 +21,8 @@ SP  (u8|u|U|L)
 ES  (\\(['"\?\\abfnrtv]|[0-7]{1,3}|x[a-fA-F0-9]+))
 WS  [ \t\v\n\f]
 
+%x IN_COMMENT
+
 %{
 #include <iostream>
 #include "c.y.hpp"
@@ -44,7 +46,15 @@ digit [0-9]
 
 %%
 
-"/*"                                    { comment(); }
+<INITIAL>{
+"/*"              BEGIN(IN_COMMENT);
+}
+<IN_COMMENT>{
+"*/"      BEGIN(INITIAL);
+[^*\n]+   // eat comment in chunks
+"*"       // eat the lone star
+\n        ++linenum;
+} { /* return (COMMENT); */ }
 "//".*                                    { /* consume //-comment */ }
 
 "auto"                  { return(AUTO); }
@@ -156,7 +166,8 @@ digit [0-9]
 "|"                 { return '|'; }
 "?"                 { return '?'; }
 
-{WS}                    { /* whitespace separates tokens */ }
+[ \t\v\f]           { /* whitespace separates tokens */ }
+[ \n]               { ++linenum; }
 .                   { /* discard bad characters */ }
 
 %%
@@ -164,25 +175,6 @@ digit [0-9]
 int yywrap(void)        /* called at end of input */
 {
     return 1;           /* terminate now */
-}
-
-static void comment(void)
-{
-    int c;
-
-    while ((c = yyinput()) != 0)
-        if (c == '*')
-        {
-            while ((c = yyinput()) == '*')
-                ;
-
-            if (c == '/')
-                return;
-
-            if (c == 0)
-                break;
-        }
-    yyerror("unterminated comment");
 }
 
 static int check_type(void)
