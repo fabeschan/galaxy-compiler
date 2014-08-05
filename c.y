@@ -12,36 +12,136 @@ extern char* yytext;
 void yyerror(const char *s);
 %}
 
-// Bison fundamentally works by asking flex to get the next token, which it
-// returns as an object of type "yystype".  But tokens could be of any
-// arbitrary data type!  So we deal with that in Bison by defining a C union
-// holding each of the types of tokens that Flex could return, and have Bison
-// use that union instead of "int" for the definition of "yystype":
-%union {
-    int ival;
-    float fval;
-    char *sval;
-}
+%token INT FLOAT CHAR DOUBLE VOID
+%token FOR WHILE
+%token IF ELSE PRINTF
+%token STRUCT
+%token NUM ID
+%token INCLUDE
+%token DOT
 
-// define the "terminal symbol" token types I'm going to use (in CAPS
-// by convention), and associate each with a field of the union:
-%token <ival> INT
-%token <fval> FLOAT
-%token <sval> STRING
+%right '='
+%left AND OR
+%left '<' '>' LE GE EQ NE LT GT
 
 %%
 
-// this is the actual grammar that bison will parse, but for right now it's just
-// something silly to echo to the screen what bison gets from flex.  We'll
-// make a real one shortly:
-snazzle:
-    INT snazzle      { cout << "bison found an int: " << $1 << endl; }
-    | FLOAT snazzle  { cout << "bison found a float: " << $1 << endl; }
-    | STRING snazzle { cout << "bison found a string: " << $1 << endl; }
-    | INT            { cout << "bison found an int: " << $1 << endl; }
-    | FLOAT          { cout << "bison found a float: " << $1 << endl; }
-    | STRING         { cout << "bison found a string: " << $1 << endl; }
+start:    Function 
+    | Declaration
     ;
+
+/* Declaration block */
+Declaration: Type Assignment ';' 
+    | Assignment ';'      
+    | FunctionCall ';'     
+    | ArrayUsage ';'    
+    | Type ArrayUsage ';'   
+    | StructStmt ';'    
+    | error    
+    ;
+
+/* Assignment block */
+Assignment: ID '=' Assignment
+    | ID '=' FunctionCall
+    | ID '=' ArrayUsage
+    | ArrayUsage '=' Assignment
+    | ID ',' Assignment
+    | NUM ',' Assignment
+    | ID '+' Assignment
+    | ID '-' Assignment
+    | ID '*' Assignment
+    | ID '/' Assignment    
+    | NUM '+' Assignment
+    | NUM '-' Assignment
+    | NUM '*' Assignment
+    | NUM '/' Assignment
+    | '\'' Assignment '\''    
+    | '(' Assignment ')'
+    | '-' '(' Assignment ')'
+    | '-' NUM
+    | '-' ID
+    |   NUM
+    |   ID
+    ;
+
+/* Function Call Block */
+FunctionCall : ID'('')'
+    | ID'('Assignment')'
+    ;
+
+/* Array Usage */
+ArrayUsage : ID'['Assignment']'
+    ;
+
+/* Function block */
+Function: Type ID '(' ArgListOpt ')' CompoundStmt 
+    ;
+ArgListOpt: ArgList
+    |
+    ;
+ArgList:  ArgList ',' Arg
+    | Arg
+    ;
+Arg:    Type ID
+    ;
+CompoundStmt:    '{' StmtList '}'
+    ;
+StmtList:    StmtList Stmt
+    |
+    ;
+Stmt:    WhileStmt
+    | Declaration
+    | ForStmt
+    | IfStmt
+    | PrintFunc
+    | ';'
+    ;
+
+/* Type Identifier block */
+Type:    INT 
+    | FLOAT
+    | CHAR
+    | DOUBLE
+    | VOID 
+    ;
+
+/* Loop Blocks */ 
+WhileStmt: WHILE '(' Expr ')' Stmt  
+    | WHILE '(' Expr ')' CompoundStmt 
+    ;
+
+/* For Block */
+ForStmt: FOR '(' Expr ';' Expr ';' Expr ')' Stmt 
+       | FOR '(' Expr ';' Expr ';' Expr ')' CompoundStmt 
+       | FOR '(' Expr ')' Stmt 
+       | FOR '(' Expr ')' CompoundStmt 
+    ;
+
+/* IfStmt Block */
+IfStmt : IF '(' Expr ')' 
+         Stmt 
+    ;
+
+/* Struct Statement */
+StructStmt : STRUCT ID '{' Type Assignment '}'  
+    ;
+
+/* Print Function */
+PrintFunc : PRINTF '(' Expr ')' ';'
+    ;
+
+/*Expression Block*/
+Expr:    
+    | Expr LE Expr 
+    | Expr GE Expr
+    | Expr NE Expr
+    | Expr EQ Expr
+    | Expr GT Expr
+    | Expr LT Expr
+    | Assignment
+    | ArrayUsage
+    ;
+
 %%
 
 int main(int argc, char *argv[]) {
