@@ -39,6 +39,13 @@ static void comment(void);
 static int check_type(void);
 
 int linenum = 1;
+
+#define TOKEN(t) do { \
+    printf("%d: found keyword: %s\n", linenum, yytext); \
+    return t; \
+    } while (0)
+#define DISABLED() yyterminate()
+
 %}
 
 alpha [a-zA-Z]
@@ -57,40 +64,40 @@ digit [0-9]
 } { /* return (COMMENT); */ }
 "//".*                                    { /* consume //-comment */ }
 
-"auto"                  { return(AUTO); }
-"break"                 { return(BREAK); }
-"case"                  { return(CASE); }
-"char"                  { return(CHAR); }
-"const"                 { return(CONST); }
-"continue"              { return(CONTINUE); }
-"default"               { return(DEFAULT); }
-"do"                    { return(DO); }
-"double"                { return(DOUBLE); }
-"else"                  { return(ELSE); }
-"enum"                  { return(ENUM); }
-"extern"                { return(EXTERN); }
-"float"                 { return(FLOAT); }
-"for"                   { return(FOR); }
-"goto"                  { return(GOTO); }
-"if"                    { return(IF); }
-"inline"                { return(INLINE); }
-"int"                   { return(INT); }
-"long"                  { return(LONG); }
-"register"              { return(REGISTER); }
-"restrict"              { return(RESTRICT); }
-"return"                { return(RETURN); }
-"short"                 { return(SHORT); }
-"signed"                { return(SIGNED); }
-"sizeof"                { return(SIZEOF); }
-"static"                { return(STATIC); }
-"struct"                { return(STRUCT); }
-"switch"                { return(SWITCH); }
-"typedef"               { return(TYPEDEF); }
-"union"                 { return(UNION); }
-"unsigned"              { return(UNSIGNED); }
-"void"                  { return(VOID); }
-"volatile"              { return(VOLATILE); }
-"while"                 { return(WHILE); }
+"auto"                  { DISABLED(); }
+"break"                 { TOKEN(BREAK); }
+"case"                  { TOKEN(CASE); }
+"char"                  { TOKEN(CHAR); }
+"const"                 { TOKEN(CONST); }
+"continue"              { TOKEN(CONTINUE); }
+"default"               { TOKEN(DEFAULT); }
+"do"                    { TOKEN(DO); }
+"double"                { TOKEN(DOUBLE); }
+"else"                  { TOKEN(ELSE); }
+"enum"                  { TOKEN(ENUM); }
+"extern"                { TOKEN(EXTERN); }
+"float"                 { TOKEN(FLOAT); }
+"for"                   { TOKEN(FOR); }
+"goto"                  { TOKEN(GOTO); }
+"if"                    { TOKEN(IF); }
+"inline"                { TOKEN(INLINE); }
+"int"                   { TOKEN(INT); }
+"long"                  { TOKEN(LONG); }
+"register"              { TOKEN(REGISTER); }
+"restrict"              { TOKEN(RESTRICT); }
+"return"                { TOKEN(RETURN); }
+"short"                 { TOKEN(SHORT); }
+"signed"                { TOKEN(SIGNED); }
+"sizeof"                { TOKEN(SIZEOF); }
+"static"                { TOKEN(STATIC); }
+"struct"                { TOKEN(STRUCT); }
+"switch"                { TOKEN(SWITCH); }
+"typedef"               { TOKEN(TYPEDEF); }
+"union"                 { TOKEN(UNION); }
+"unsigned"              { TOKEN(UNSIGNED); }
+"void"                  { TOKEN(VOID); }
+"volatile"              { TOKEN(VOLATILE); }
+"while"                 { TOKEN(WHILE); }
 "_Alignas"                              { return ALIGNAS; }
 "_Alignof"                              { return ALIGNOF; }
 "_Atomic"                               { return ATOMIC; }
@@ -168,7 +175,7 @@ digit [0-9]
 
 [ \t\v\f]           { /* whitespace separates tokens */ }
 [ \n]               { ++linenum; }
-.                   { /* discard bad characters */ }
+.                   { yyterminate(); /* not sure: terminate or skip bad characters */ }
 
 %%
 
