@@ -157,10 +157,11 @@ int main(int argc, char *argv[]) {
     yyin = myfile;
     
     // parse through the input until there is no more:
-    do {
-        yyparse();
-    } while (!feof(yyin));
-
+    if(!yyparse())
+        printf("\nParsing complete\n");
+    else
+        printf("\nParsing failed\n");
+    fclose(myfile);
     return 0;
 }
 
