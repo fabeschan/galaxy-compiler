@@ -29,6 +29,7 @@ void yyerror(const char *s);
 %token <sval> STRING
 
 %%
+
 // this is the actual grammar that bison will parse, but for right now it's just
 // something silly to echo to the screen what bison gets from flex.  We'll
 // make a real one shortly:
@@ -42,12 +43,12 @@ snazzle:
     ;
 %%
 
-int main() {
+int main(int argc, char *argv[]) {
     // open a file handle to a particular file:
-    FILE *myfile = fopen("a.snazzle.file", "r");
+    FILE *myfile = fopen(argv[1], "r");
     // make sure it is valid:
     if (!myfile) {
-        cout << "I can't open a.snazzle.file!" << endl;
+        cout << "Error: cannot open file" << endl;
         return -1;
     }
     // set flex to read from it instead of defaulting to STDIN:
@@ -57,7 +58,8 @@ int main() {
     do {
         yyparse();
     } while (!feof(yyin));
-    
+
+    return 0;
 }
 
 void yyerror(const char *s) {
