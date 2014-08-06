@@ -222,7 +222,7 @@ declaration
     ;
 
 declaration_specifiers
-    : storage_class_specifier declaration_specifiers /* { cout << $1 << " " << $2 << " " << TYPEDEF << endl; } */
+    : storage_class_specifier declaration_specifiers /* { cout << $$ << " " << $1 << " " << $2 << " " << TYPEDEF << endl; } */
     | storage_class_specifier
     | type_specifier declaration_specifiers
     | type_specifier

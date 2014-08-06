@@ -30,7 +30,6 @@ using namespace std;
 #define YY_DECL extern "C" int yylex()
 
 extern void yyerror(const char *);  /* prints grammar violation message */
-
 extern int sym_type(const char *);  /* returns type from symbol table */
 
 //#define sym_type(identifier) IDENTIFIER /* with no symbol table, fake it */
@@ -68,7 +67,7 @@ digit [0-9]
 "*"       // eat the lone star
 \n        ++linenum;
 } { /* return (COMMENT); */ }
-"//".*                                    { /* consume //-comment */ }
+"//".*                  { /* consume //-comment */ }
 
 "auto"                  { TOKEN(AUTO); }
 "break"                 { TOKEN(BREAK); }
@@ -155,15 +154,15 @@ digit [0-9]
 "=="                    { TOKEN(EQ_OP); }
 "!="                    { TOKEN(NE_OP); }
 ";"                 { return ';'; }
-("{"|"<%")              { return '{'; }
-("}"|"%>")              { return '}'; }
+("{"|"<%")          { return '{'; }
+("}"|"%>")          { return '}'; }
 ","                 { return ','; }
 ":"                 { return ':'; }
 "="                 { return '='; }
 "("                 { return '('; }
 ")"                 { return ')'; }
-("["|"<:")              { return '['; }
-("]"|":>")              { return ']'; }
+("["|"<:")          { return '['; }
+("]"|":>")          { return ']'; }
 "."                 { return '.'; }
 "&"                 { return '&'; }
 "!"                 { return '!'; }
@@ -185,13 +184,11 @@ digit [0-9]
 
 %%
 
-int yywrap(void)        /* called at end of input */
-{
+int yywrap(void){       /* called at end of input */
     return 1;           /* terminate now */
 }
 
-static int check_type(void)
-{
+static int check_type(void) {
     switch (sym_type(yytext))
     {
     case TYPEDEF_NAME:                /* previously defined */

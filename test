@@ -7,12 +7,13 @@ void main(){ */
     int a = 1;
     1 + 3;
     a.out = 1 + b.kiss();
+    void static int double; // interesting
 }
 
 typedef int oink;
 
 static void main(int arg1, int arg2){
     return a.out + "gfdsa"; // comment is here
-    void (*ha)(int, int) = func;
-    auto void static register int r = 1;
+    void (*ha)(int, int) = func; // function pointer
+    auto void static register int r = 1; // wow multiple storage specifiers
 }
