@@ -17,22 +17,29 @@ void yyerror(const char *s);
 int sym_type(const char *);
 %}
 
-%token  IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME SIZEOF
-%token  PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
-%token  AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
-%token  SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
-%token  XOR_ASSIGN OR_ASSIGN
-%token  TYPEDEF_NAME ENUMERATION_CONSTANT
+/* Represents the many different ways we can access our data */
+%union {
+    std::string *str;
+    int token;
+}
 
-%token  TYPEDEF EXTERN STATIC AUTO REGISTER INLINE
-%token  CONST RESTRICT VOLATILE
-%token  BOOL CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE VOID
-%token  COMPLEX IMAGINARY 
-%token  STRUCT UNION ENUM ELLIPSIS
+/* Terminal symbols */
+%token<str>  IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME
+%token<str>  TYPEDEF_NAME ENUMERATION_CONSTANT
+%token<token>  PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP SIZEOF
+%token<token>  AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
+%token<token>  SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
+%token<token>  XOR_ASSIGN OR_ASSIGN
 
-%token  CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
+%token<token>  TYPEDEF EXTERN STATIC AUTO REGISTER INLINE
+%token<token>  CONST RESTRICT VOLATILE
+%token<token>  BOOL CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE VOID
+%token<token>  COMPLEX IMAGINARY 
+%token<token>  STRUCT UNION ENUM ELLIPSIS
 
-%token  ALIGNAS ALIGNOF ATOMIC GENERIC NORETURN STATIC_ASSERT THREAD_LOCAL
+%token<token>  CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
+
+%token<token>  ALIGNAS ALIGNOF ATOMIC GENERIC NORETURN STATIC_ASSERT THREAD_LOCAL
 
 %start translation_unit
 
@@ -215,7 +222,7 @@ declaration
     ;
 
 declaration_specifiers
-    : storage_class_specifier declaration_specifiers
+    : storage_class_specifier declaration_specifiers /* { cout << $1 << " " << $2 << " " << TYPEDEF << endl; } */
     | storage_class_specifier
     | type_specifier declaration_specifiers
     | type_specifier

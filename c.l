@@ -42,8 +42,14 @@ int linenum = 1;
 
 #define TOKEN(t) do { \
     printf("%d: found keyword: %s\n", linenum, yytext); \
+    return (yylval.token = t); \
+    } while (0)
+
+#define SAVETOKEN(t) do { \
+    yylval.str = new std::string(yytext, yyleng); \
     return t; \
     } while (0)
+
 #define DISABLED() yyterminate()
 
 %}
@@ -98,56 +104,56 @@ digit [0-9]
 "void"                  { TOKEN(VOID); }
 "volatile"              { TOKEN(VOLATILE); }
 "while"                 { TOKEN(WHILE); }
-"_Alignas"                              { return ALIGNAS; }
-"_Alignof"                              { return ALIGNOF; }
-"_Atomic"                               { return ATOMIC; }
-"_Bool"                                 { return BOOL; }
-"_Complex"                              { return COMPLEX; }
-"_Generic"                              { return GENERIC; }
-"_Imaginary"                            { return IMAGINARY; }
-"_Noreturn"                             { return NORETURN; }
-"_Static_assert"                        { return STATIC_ASSERT; }
-"_Thread_local"                         { return THREAD_LOCAL; }
-"__func__"                              { return FUNC_NAME; }
+"_Alignas"                              { TOKEN(ALIGNAS); }
+"_Alignof"                              { TOKEN(ALIGNOF); }
+"_Atomic"                               { TOKEN(ATOMIC); }
+"_Bool"                                 { TOKEN(BOOL); }
+"_Complex"                              { TOKEN(COMPLEX); }
+"_Generic"                              { TOKEN(GENERIC); }
+"_Imaginary"                            { TOKEN(IMAGINARY); }
+"_Noreturn"                             { TOKEN(NORETURN); }
+"_Static_assert"                        { TOKEN(STATIC_ASSERT); }
+"_Thread_local"                         { TOKEN(THREAD_LOCAL); }
+"__func__"                              { TOKEN(FUNC_NAME); }
 
-{L}{A}*                 { return check_type(); }
+{L}{A}*                 { SAVETOKEN(check_type()); }
 
-{HP}{H}+{IS}?               { return I_CONSTANT; }      /* hex integer */
-{NZ}{D}*{IS}?               { return I_CONSTANT; }      /* dec integer */
-"0"{O}*{IS}?                { return I_CONSTANT; }      /* oct integer */
-{CP}?"'"([^'\\\n]|{ES})+"'"     { return I_CONSTANT; }
+{HP}{H}+{IS}?                   { SAVETOKEN(I_CONSTANT); }      /* hex integer */
+{NZ}{D}*{IS}?                   { SAVETOKEN(I_CONSTANT); }      /* dec integer */
+"0"{O}*{IS}?                    { SAVETOKEN(I_CONSTANT); }      /* oct integer */
+{CP}?"'"([^'\\\n]|{ES})+"'"     { SAVETOKEN(I_CONSTANT); }
 
-{D}+{E}{FS}?                { return F_CONSTANT; }
-{D}*"."{D}+{E}?{FS}?            { return F_CONSTANT; }
-{D}+"."{E}?{FS}?            { return F_CONSTANT; }
-{HP}{H}+{P}{FS}?            { return F_CONSTANT; }
-{HP}{H}*"."{H}+{P}{FS}?         { return F_CONSTANT; }
-{HP}{H}+"."{P}{FS}?         { return F_CONSTANT; }
+{D}+{E}{FS}?                    { SAVETOKEN(F_CONSTANT); }
+{D}*"."{D}+{E}?{FS}?            { SAVETOKEN(F_CONSTANT); }
+{D}+"."{E}?{FS}?                { SAVETOKEN(F_CONSTANT); }
+{HP}{H}+{P}{FS}?                { SAVETOKEN(F_CONSTANT); }
+{HP}{H}*"."{H}+{P}{FS}?         { SAVETOKEN(F_CONSTANT); }
+{HP}{H}+"."{P}{FS}?             { SAVETOKEN(F_CONSTANT); }
 
-({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { return STRING_LITERAL; }
+({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { SAVETOKEN(STRING_LITERAL); }
 
-"..."                   { return ELLIPSIS; }
-">>="                   { return RIGHT_ASSIGN; }
-"<<="                   { return LEFT_ASSIGN; }
-"+="                    { return ADD_ASSIGN; }
-"-="                    { return SUB_ASSIGN; }
-"*="                    { return MUL_ASSIGN; }
-"/="                    { return DIV_ASSIGN; }
-"%="                    { return MOD_ASSIGN; }
-"&="                    { return AND_ASSIGN; }
-"^="                    { return XOR_ASSIGN; }
-"|="                    { return OR_ASSIGN; }
-">>"                    { return RIGHT_OP; }
-"<<"                    { return LEFT_OP; }
-"++"                    { return INC_OP; }
-"--"                    { return DEC_OP; }
-"->"                    { return PTR_OP; }
-"&&"                    { return AND_OP; }
-"||"                    { return OR_OP; }
-"<="                    { return LE_OP; }
-">="                    { return GE_OP; }
-"=="                    { return EQ_OP; }
-"!="                    { return NE_OP; }
+"..."                   { TOKEN(ELLIPSIS); }
+">>="                   { TOKEN(RIGHT_ASSIGN); }
+"<<="                   { TOKEN(LEFT_ASSIGN); }
+"+="                    { TOKEN(ADD_ASSIGN); }
+"-="                    { TOKEN(SUB_ASSIGN); }
+"*="                    { TOKEN(MUL_ASSIGN); }
+"/="                    { TOKEN(DIV_ASSIGN); }
+"%="                    { TOKEN(MOD_ASSIGN); }
+"&="                    { TOKEN(AND_ASSIGN); }
+"^="                    { TOKEN(XOR_ASSIGN); }
+"|="                    { TOKEN(OR_ASSIGN); }
+">>"                    { TOKEN(RIGHT_OP); }
+"<<"                    { TOKEN(LEFT_OP); }
+"++"                    { TOKEN(INC_OP); }
+"--"                    { TOKEN(DEC_OP); }
+"->"                    { TOKEN(PTR_OP); }
+"&&"                    { TOKEN(AND_OP); }
+"||"                    { TOKEN(OR_OP); }
+"<="                    { TOKEN(LE_OP); }
+">="                    { TOKEN(GE_OP); }
+"=="                    { TOKEN(EQ_OP); }
+"!="                    { TOKEN(NE_OP); }
 ";"                 { return ';'; }
 ("{"|"<%")              { return '{'; }
 ("}"|"%>")              { return '}'; }

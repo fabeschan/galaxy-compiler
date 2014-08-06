@@ -11,7 +11,8 @@ void main(){ */
 
 typedef int oink;
 
-static void main(int arg1, oink arg2){
+static void main(int arg1, int arg2){
     return a.out + "gfdsa"; // comment is here
-    auto ha = 1;
+    void (*ha)(int, int) = func;
+    auto void static register int r = 1;
 }
