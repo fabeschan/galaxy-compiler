@@ -40,7 +40,7 @@ int sym_type(const char *);
 
 %token<token>  CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
-%token<token>  ALIGNAS ALIGNOF ATOMIC GENERIC NORETURN STATIC_ASSERT THREAD_LOCAL
+%token<token>  ALIGNAS ALIGNOF ATOMIC NORETURN STATIC_ASSERT THREAD_LOCAL
 
 %start program
 
@@ -51,7 +51,6 @@ primary_expression
     | constant
     | string
     | '(' expression ')'
-    | generic_selection
     ;
 
 constant
@@ -67,20 +66,6 @@ enumeration_constant        /* before it has been defined as such */
 string
     : STRING_LITERAL
     | FUNC_NAME
-    ;
-
-generic_selection
-    : GENERIC '(' assignment_expression ',' generic_assoc_list ')'
-    ;
-
-generic_assoc_list
-    : generic_association
-    | generic_assoc_list ',' generic_association
-    ;
-
-generic_association
-    : type_name ':' assignment_expression
-    | DEFAULT ':' assignment_expression
     ;
 
 postfix_expression

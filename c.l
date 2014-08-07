@@ -112,7 +112,6 @@ digit [0-9]
 "_Atomic"                               { TOKEN(ATOMIC); }
 "_Bool"                                 { TOKEN(BOOL); }
 "_Complex"                              { TOKEN(COMPLEX); }
-"_Generic"                              { TOKEN(GENERIC); }
 "_Imaginary"                            { TOKEN(IMAGINARY); }
 "_Noreturn"                             { TOKEN(NORETURN); }
 "_Static_assert"                        { TOKEN(STATIC_ASSERT); }
