@@ -1,4 +1,4 @@
-.PHONY: all test clean
+.PHONY: all test test1 test2 clean
 
 all: out
 
@@ -11,8 +11,13 @@ c.y.hpp c.y.cpp: c.y
 out: c.y.cpp c.l.cpp
 	g++ -ll -ly $^ -o $@
 
-test:
+test1:
 	./out $@
+
+test2:
+	./out $@
+
+test: test1 test2
 
 vim: c.l c.y
 	vim -p $^

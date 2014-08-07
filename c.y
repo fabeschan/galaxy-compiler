@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include "ast.hpp"
 using namespace std;
 
 // stuff from flex that bison needs to know about:

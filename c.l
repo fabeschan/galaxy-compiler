@@ -26,6 +26,7 @@ WS  [ \t\v\n\f]
 %{
 #include <iostream>
 #include "c.y.hpp"
+#include "ast.hpp"
 using namespace std;
 #define YY_DECL extern "C" int yylex()
 

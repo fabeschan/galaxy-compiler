@@ -1,0 +1,14 @@
+// vim: set filetype=cpp:
+
+fixed GTGetConstructionProgress(int player, string desired, bool incompleteOnly);
+
+int atos(int a){
+    return IntToString(a);
+}
+
+const int c_nonola = 777;
+struct struuu {
+    int *m1;
+    int m2;
+    struct struuu *meh;
+};
