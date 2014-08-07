@@ -42,7 +42,7 @@ int sym_type(const char *);
 
 %token<token>  ALIGNAS ALIGNOF ATOMIC GENERIC NORETURN STATIC_ASSERT THREAD_LOCAL
 
-%start translation_unit
+%start program
 
 %%
 
@@ -532,6 +532,10 @@ jump_statement
     | BREAK ';'
     | RETURN ';'
     | RETURN expression ';'
+    ;
+
+program
+    : translation_unit
     ;
 
 translation_unit
