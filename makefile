@@ -2,7 +2,7 @@
 
 all: out
 
-c.l.cpp: c.l
+c.l.cpp: c.l c.y.hpp
 	flex -o $@ $^
 
 c.y.hpp c.y.cpp: c.y

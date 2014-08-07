@@ -33,7 +33,7 @@ int sym_type(const char *);
 
 %token<token>  TYPEDEF EXTERN STATIC AUTO REGISTER INLINE
 %token<token>  CONST RESTRICT VOLATILE
-%token<token>  BOOL CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE VOID
+%token<token>  BOOL CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT FIXED DOUBLE VOID STRING
 %token<token>  COMPLEX IMAGINARY 
 %token<token>  STRUCT UNION ENUM ELLIPSIS
 
@@ -260,9 +260,11 @@ type_specifier
     | INT
     | LONG
     | FLOAT
+    | FIXED
     | DOUBLE
     | SIGNED
     | UNSIGNED
+    | STRING
     | BOOL
     | COMPLEX
     | IMAGINARY     /* non-mandated extension */
@@ -576,7 +578,7 @@ int main(int argc, char *argv[]) {
 void yyerror(const char *s) {
     printf("%d: parse error: %s %s\n", linenum, s, yytext);
     // might as well halt now:
-    exit(-1);
+    //exit(-1);
 }
 
 int sym_type(const char *s){

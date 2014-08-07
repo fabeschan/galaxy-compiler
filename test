@@ -1,19 +1,1376 @@
-int func(int arg, int arg2){
-    return 1 + 3 + arg2;
-/*
+// vim: set filetype=cpp:
+
+// Constants and Globals
+int g_GTWRtBUniqueID = 1000; // Worker Ready to Build Unique ID
+
+const string c_GTWRtBItemUnit			= "wrtbUnit";
+const string c_GTWRtBItemPoint			= "wrtbPoint";
+const string c_GTWRtBItemBuilding		= "wrtbBuilding";
+const string c_GTWRtBWorkerGroup		= "wrtbGroup";
+
+const int c_GTAddonBuildingUnderConstruction	= 0;
+const int c_GTAddonAny							= 0;
+const int c_GTAddonNoAddonInstalled				= 1;
+const int c_GTAddonTechLabInstalled				= 2;
+const int c_GTAddonReactorInstalled				= 3;
+const int c_GTAddonInstalling					= 4;
+
+const int c_GTBuildFlagDefault 			= 0;	// changes depends on unitType and situation (i.e. can morph to any other build flags)
+const int c_GTBuildFlagProxy 			= 1;
+const int c_GTBuildFlagAntiAir 			= 2;	// for defense structures, or spotters
+const int c_GTBuildFlagBehindMinerals 	= 3;
+const int c_GTBuildFlagHidden 			= 4;	// (try to be) hidden but inside some base
+const int c_GTBuildFlagHiddenProxy		= 5;	
+const int c_GTBuildFlagWallOff			= 6;
+const int c_GTBuildFlagSpreadOut		= 7;	// example: want to spread out the gateways in a 4 gate, to make the build less obvious
+const int c_GTBuildFlagBlockExpansion	= 8;
+const int c_GTBuildFlagInsideBase		= 9; 	// macro hatch or in-base CC, and general buildings (default flag usually morphs to this)
+const int c_GTBuildFlagCreateChoke		= 10;	// (?) tentative
+const int c_GTBuildFlagBallsToTheWalls	= 20;	// (?) tentative (balls to the walls 4 gate?)
+const int c_GTBuildFlagCannonRush		= 30;	// (?) tentative (but might become BOSSLIKE, depending on how good MapAnalysis is)
+
+// include "TriggerLibs/GTMacro"
+// include "TriggerLibs/GTRapidPolling"
+// include "TriggerLibs/GTCommanderScript"
+
+// Function Declarations
+fixed GTGetConstructionProgress(int player, string desired, bool incompleteOnly);
+fixed GTGetProductionProgress(unit building);
+fixed GTBuildingUpgradeTimeRemaining(unit building);
+bool GTHasResources(int player, int minerals, int gas);
+bool GTCanAfford(int player, string unitType);
+bool GTSetRallyPoint(int player, unit building, point pos, int index);
+bool GTSetRallyTarget(int player, unit building, unit target, int index);
+void GTTrainAtBuilding(int player, unit building, string unitToBuild);
+bool GTBuildP(unit worker, string building, point location);
+void GTResearchAtBuilding(int player, unit building, string upgrade);
+int GTWRtBIssueUniqueID();
+int GTWRtBSearch(int player, string unitType);
+void GTWRtBSubmitItem(int player, string unitType, point buildLoc, unit worker);
+void GTPQSIterOverQueue(int player);
+void GTWRtBManageID(int player, int id, int csIndex, point availResources);
+point GTFindBestBuildPoint(int player, string building);
+point GTFindBuildPoint(int player, string building, int base, int buildFlag);
+fixed GTEstimateWorkerTravelTime(unit worker, point targetLoc, bool ignoreStructures);
+point GTIncomeOverTime(int player, fixed travelTime, point income); // x = minerals, y = gas
+int GTBuildingAddonStatus(unit building);
+unit GTGetNextAvailableBuilding(int player, string buildingNeeded, unitgroup units, int addonStatus);
+bool GTIsBuildingPowered(unit u);
+int GTGetRequiredAddonStatus(string unitType);
+void GTWarpGateTransform(int player);
+void GTWarpTrain(int player, unit building, string unitType);
+void GTBuildAddonAtBuilding(int player, unit building, string unitToBuild);
+point GTFindBuildPointInsideBase(int player, int base, string bType);
+point GTFindBuildPointBehindMinerals(int player, int base, string building);
+unitgroup GTMergeSortByProductionProgress(int player, unitgroup ug);
+unitgroup GTMergeUnitGroupsByProductionProgress(unitgroup left, unitgroup right);
+// // string GTPQSQueueItem(string unitType, int countAtOnce, int buildFlag);
+
+// Function Definitions
+bool GTSetRallyPoint(int player, unit building, point loc, int index) {
+	order ord = AITacticalOrderIndex(player, building, c_AB_Rally, index);
+	if (ord == null) { return false; }
+	OrderSetTargetPoint(ord, loc);
+	GTUnitIssueOrder(building, ord, c_orderQueueReplace, GTUnitOrderIssueUniqueID());
+	return true;
 }
 
-void main(){ */
-    int a = 1;
-    1 + 3;
-    a.out = 1 + b.kiss();
-    void static int double; // interesting
+bool GTSetRallyTarget(int player, unit building, unit target, int index) {
+	order ord = AITacticalOrderIndex(player, building, c_AB_Rally, index);
+	if (ord == null) { return false; }
+	OrderSetTargetUnit(ord, target);
+	GTUnitIssueOrder(building, ord, c_orderQueueReplace, GTUnitOrderIssueUniqueID());
+	return true;
 }
 
-typedef int oink;
-
-static void main(int arg1, int arg2){
-    return a.out + "gfdsa"; // comment is here
-    void (*ha)(int, int) = func; // function pointer
-    auto void static register int r = 1; // wow multiple storage specifiers
+bool GTHasResources(int player, int mineralsR, int gasR) {
+	int minerals = PlayerGetPropertyInt(player, c_playerPropMinerals);
+	int gas = PlayerGetPropertyInt(player, c_playerPropVespene);
+	
+	if (minerals >= mineralsR && gas >= gasR) {
+		return true;
+	}
+	return false;
 }
+
+bool GTCanAfford(int player, string unitType) {
+	point resourceCost = GTResourceCost(unitType);
+	return GTHasResources(player, FixedToInt(PointGetX(resourceCost)),  FixedToInt(PointGetY(resourceCost)));
+}
+
+fixed GTGetProductionProgress(unit building) { 
+// shamelessly adapted from EagleAI. Credits go to MTops for writing this
+	string abil = AbilityCommandGetAbility(OrderGetAbilityCommand(UnitOrder(building, 0)));
+	int index = AbilityCommandGetCommand(OrderGetAbilityCommand(UnitOrder(building, 0)));
+	if (building == null) { return 0.0; }
+	else if (StringFind(abil, "UpgradeTo", true) > -1) {
+		if (abil == "UpgradeToOrbital") { return 100 * (GTGameTime() - IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime))) / 35.0; }
+		if (abil == "UpgradeToPlanetaryFortress") { return 100 * (GTGameTime() - IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime))) / 50.0; }
+		if (abil == "UpgradeToWarpGate") { return 100 * (GTGameTime() - IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime))) / 10.0; }
+		if (abil == "UpgradeToLair") { return 100 * (GTGameTime() - IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime))) / 80.0; }
+		if (abil == "UpgradeToHive") { return 100 * (GTGameTime() - IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime))) / 100.0; }
+		if (abil == "UpgradeToGreaterSpire") { return 100 * (GTGameTime() - IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime))) / 100.0; }
+		GTErrorLog(UnitGetOwner(building), c_GTError, c_GTProduction, "encountered unknown upgrade: " + abil + " in GTGetProductionProgress");
+	}
+	else if (StringFind(abil, "AddOns", true) > -1) {
+		if (index == 0) { return 100 * (GTGameTime() - IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime))) / 25.0; } // tech lab
+		if (index == 1) { return 100 * (GTGameTime() - IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime))) / 50.0; } // reactor
+		GTErrorLog(UnitGetOwner(building), c_GTError, c_GTProduction, "encountered unknown addon order: " + abil + " with index " + IntToString(index) + " in GTGetProductionProgress");
+	}
+	else if (UnitTestState(building, c_unitStateUnderConstruction)) { return UnitGetProgressComplete(building, 0); }
+	else if (UnitGetType(building) == c_PB_WarpGate) { return (45.0 - UnitAbilityGetCooldown(building, "WarpGateTrain", "WarpGateTrain")) / 0.45; }
+	else if (GTBuildingAddonStatus(building) == c_GTAddonReactorInstalled) {
+		if (UnitQueueItemCount(building, 4) > 0) { return 0.0; }
+		else if (UnitQueueItemCount(building, 3) > 0) { return MinF(UnitGetProgressComplete(building, 1), UnitGetProgressComplete(building, 2)); }
+		else if (UnitQueueItemCount(building, 2) > 0) { return MaxF(UnitGetProgressComplete(building, 1), UnitGetProgressComplete(building, 2)); }
+		else { return 100.0; }
+	}
+	else {
+		if (UnitQueueItemCount(building, 2) > 0) { return 0.0; }
+		else if (UnitQueueItemCount(building, 1) > 0) { return UnitGetProgressComplete(building, 1); }
+		else { return 100.0; }
+	}
+	
+	return 100.0; // should never reach this statement
+}
+
+fixed GTBuildingUpgradeTimeRemaining(unit building){
+	string abil = AbilityCommandGetAbility(OrderGetAbilityCommand(UnitOrder(building, 0)));
+	int index = AbilityCommandGetCommand(OrderGetAbilityCommand(UnitOrder(building, 0)));
+	if (building == null) { return 0.0; }
+	else if (StringFind(abil, "UpgradeTo", true) > -1) {
+		if (abil == "UpgradeToOrbital") { return IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime)) + 35.0 - GTGameTime(); }
+		if (abil == "UpgradeToPlanetaryFortress") { return IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime)) + 50.0 - GTGameTime(); }
+		if (abil == "UpgradeToWarpGate") { return IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime)) + 10.0 - GTGameTime(); }
+		if (abil == "UpgradeToLair") { return IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime)) + 80.0 - GTGameTime(); }
+		if (abil == "UpgradeToHive") { return IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime)) + 100.0 - GTGameTime(); }
+		if (abil == "UpgradeToGreaterSpire") { return IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime)) + 100.0 - GTGameTime(); }
+		GTErrorLog(UnitGetOwner(building), c_GTError, c_GTProduction, "encountered unknown upgrade: " + abil + " in GTBuildingUpgradeTimeRemaining");
+	}
+	else if (StringFind(abil, "AddOns", true) > -1) {
+		if (index == 0) { return IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime)) + 25.0 - GTGameTime(); } // tech lab
+		if (index == 1) { return IntToFixed(GTUnitGetData(building, c_GTUnitDataUpgradeTime)) + 50.0 - GTGameTime(); } // reactor
+		GTErrorLog(UnitGetOwner(building), c_GTError, c_GTProduction, "encountered unknown addon order: " + abil + " with index " + IntToString(index) + " in GTBuildingUpgradeTimeRemaining");
+	}
+	return UnitQueueItemTime(building, c_unitQueueTimeRemaining, 1);
+}
+
+fixed GTGetConstructionProgress(int player, string desired, bool incompleteOnly) {
+// shamelessly adapted from EagleAI. Credits go to MTops for writing this
+// get best progress of production of desired
+	unitgroup units;
+	unit unitUC;
+	fixed bestProgress = 0.0;
+	fixed progress;
+
+	if (incompleteOnly == false && AITechCount(player, desired, c_techCountCompleteOnly) > 0) { return 100.0; }
+	if (AITechCount(player, desired, c_techCountQueuedOrBetter) == 0) { return 0.0; }
+	if (desired == c_TB_CommandCenter_Alias) { desired = c_TB_CommandCenter; }
+	else if (desired == c_ZB_Hatchery_Alias) { desired = c_ZB_Hatchery; }
+	else if (desired == c_ZB_Lair_Alias) { desired = c_ZB_Lair; }
+	else if (desired == c_ZB_Spire_Alias) { desired = c_ZB_Spire; }
+	
+	if (desired == c_ZB_Lair || desired == c_ZB_Hive || desired == c_ZB_GreaterSpire) {
+		if (desired == c_ZB_Lair) { units = UnitGroup(c_ZB_Hatchery, player, RegionEntireMap(), null, 100); }
+		else if (desired == c_ZB_Hive) { units = UnitGroup(c_ZB_Lair, player, RegionEntireMap(), null, 100); }
+		else if (desired == c_ZB_GreaterSpire) { units = UnitGroup(c_ZB_Spire, player, RegionEntireMap(), null, 100); }
+		while (UnitGroupCount(units, c_unitCountAll) > 0) {
+			unitUC = UnitGroupUnit(units, 1);
+			if (UnitOrderCount(unitUC) > 0 && AbilityCommandGetAbility(OrderGetAbilityCommand(UnitOrder(unitUC, 0))) == "UpgradeTo" + desired) {
+				progress = GTGetProductionProgress(unitUC);
+				if (bestProgress < progress) { bestProgress = progress; }
+			}
+			UnitGroupRemove(units, unitUC);
+		}
+	}
+	else if (UnitTypeTestAttribute(desired, c_unitAttributeStructure)) {
+		units = UnitGroup(desired, player, RegionEntireMap(), UnitFilterStr("UnderConstruction;-"), 200);
+		// units = UnitGroupFilter(desired, player, GTTableGetUnitGroup(player, g_Buildings), UnitFilterStr("UnderConstruction;-"), 200);
+		while (UnitGroupCount(units, c_unitCountAll) > 0) {
+			unitUC = UnitGroupUnit(units, 1);
+			progress = UnitGetProgressComplete(unitUC, 0);
+			if (bestProgress < progress) { bestProgress = progress; }
+			UnitGroupRemove(units, unitUC);
+		}
+	}
+	else if (UnitTypeTestAttribute(GTGetUnitProducedByType(desired), c_unitAttributeStructure)) {
+		units = UnitGroup(GTGetUnitProducedByType(desired), player, RegionEntireMap(), UnitFilterStr("-;UnderConstruction"), 100);
+		while (UnitGroupCount(units, c_unitCountAll) > 0) {
+			unitUC = UnitGroupUnit(units, 1);
+			if (UnitQueueItemCount(unitUC, 1) > 0 && UnitQueueItemGet(unitUC, 1, 1) == desired) {
+				progress = GTGetProductionProgress(unitUC);
+				if (bestProgress < progress) { bestProgress = progress; }
+			}
+			UnitGroupRemove(units, unitUC);
+		}
+	}
+	else if (GTGetUnitProducedByType(desired) == c_ZU_Larva) {
+		units = UnitGroup(c_ZU_Egg, player, RegionEntireMap(), null, 100);
+		while (UnitGroupCount(units, c_unitCountAll) > 0) {
+			unitUC = UnitGroupUnit(units, 1);
+			if (UnitQueueItemGet(unitUC, 1, 1) == desired) {
+				progress = UnitGetProgressComplete(unitUC, 1);
+				if (bestProgress < progress) { bestProgress = progress; }
+			}
+			UnitGroupRemove(units, unitUC);
+		}
+	}
+	else { GTErrorLog(player, c_GTError, c_GTProduction, "don't know where " + desired + " comes from! can't check production progress"); }
+	return bestProgress;
+}
+
+void GTTrainAtBuilding(int player, unit building, string unitToBuild) {
+	string buildAbility;
+	int buildIndex = 0;
+	order buildOrder;
+	
+	if (building == null) {
+		GTErrorLog(player, c_GTWarning, c_GTProduction, "invalid producer trying to build a " + unitToBuild);
+		return;
+	}
+
+	if (!GTCanAfford(player, unitToBuild)) { return; }
+	
+		 if (unitToBuild == c_TU_SCV)			{ buildAbility = "CommandCenterTrain";				}
+	else if (unitToBuild == c_TU_Marine)		{ buildAbility = "BarracksTrain"; 					}
+	else if (unitToBuild == c_TU_Marauder)		{ buildAbility = "BarracksTrain"; buildIndex = 3;	}
+	else if (unitToBuild == c_TU_Ghost)			{ buildAbility = "BarracksTrain"; buildIndex = 2;	}
+	else if (unitToBuild == c_TU_Reaper)		{ buildAbility = "BarracksTrain"; buildIndex = 1;	}
+	else if (unitToBuild == c_TU_Hellion)		{ buildAbility = "FactoryTrain"; buildIndex = 5;	}
+	else if (unitToBuild == c_TU_SiegeTank)	{ buildAbility = "FactoryTrain"; buildIndex = 1;	}
+	else if (unitToBuild == c_TU_Thor)			{ buildAbility = "FactoryTrain"; buildIndex = 4;	}
+	else if (unitToBuild == c_TU_Viking)		{ buildAbility = "StarportTrain"; buildIndex = 4;	}
+	else if (unitToBuild == c_TU_Medivac)		{ buildAbility = "StarportTrain"; buildIndex = 0;	}
+	else if (unitToBuild == c_TU_Raven)			{ buildAbility = "StarportTrain"; buildIndex = 2;	}
+	else if (unitToBuild == c_TU_Banshee)		{ buildAbility = "StarportTrain"; buildIndex = 1;	}
+	else if (unitToBuild == c_TU_Battlecruiser){ buildAbility = "StarportTrain"; buildIndex = 3;	}
+	else if (unitToBuild == c_PU_Probe)			{ buildAbility = "NexusTrain";						}
+	else if (unitToBuild == c_PU_Zealot)		{ buildAbility = "GatewayTrain";					}
+	else if (unitToBuild == c_PU_Stalker)		{ buildAbility = "GatewayTrain"; buildIndex = 1;	}
+	else if (unitToBuild == c_PU_Sentry)		{ buildAbility = "GatewayTrain"; buildIndex = 5;	}
+	else if (unitToBuild == c_PU_HighTemplar)	{ buildAbility = "GatewayTrain"; buildIndex = 3;	}
+	else if (unitToBuild == c_PU_DarkTemplar)	{ buildAbility = "GatewayTrain"; buildIndex = 4;	}
+	else if (unitToBuild == c_PU_Observer)		{ buildAbility = "RoboticsFacilityTrain"; buildIndex = 1;	}
+	else if (unitToBuild == c_PU_WarpPrism)	{ buildAbility = "RoboticsFacilityTrain"; buildIndex = 0;	}
+	else if (unitToBuild == c_PU_Immortal)		{ buildAbility = "RoboticsFacilityTrain"; buildIndex = 3;	}
+	else if (unitToBuild == c_PU_Colossus)		{ buildAbility = "RoboticsFacilityTrain"; buildIndex = 2;	}
+	else if (unitToBuild == c_PU_Phoenix)		{ buildAbility = "StargateTrain"; buildIndex = 0;	}
+	else if (unitToBuild == c_PU_VoidRay)		{ buildAbility = "StargateTrain"; buildIndex = 4;	}
+	else if (unitToBuild == c_PU_Carrier)		{ buildAbility = "StargateTrain"; buildIndex = 2;	}
+	else if (unitToBuild == c_PU_Mothership)	{ buildAbility = "NexusTrainMothership"; buildIndex = 2;	}
+	else if (unitToBuild == c_ZU_Baneling)		{ buildAbility = "MorphZerglingToBaneling"; 		}
+	else if (unitToBuild == c_ZU_BroodLord)	{ buildAbility = "MorphToBroodLord"; 				}
+	else if (unitToBuild == c_ZU_Overseer)		{ buildAbility = "MorphToOverseer"; 				}
+	else if (unitToBuild == c_ZU_Corruptor)	{ buildAbility = "LarvaTrain"; buildIndex = 11;		}
+	else if (unitToBuild == c_ZU_Drone)			{ buildAbility = "LarvaTrain"; buildIndex = 0;		}
+	else if (unitToBuild == c_ZU_Hydralisk)	{ buildAbility = "LarvaTrain"; buildIndex = 3;		}
+	else if (unitToBuild == c_ZU_Infestor)		{ buildAbility = "LarvaTrain"; buildIndex = 10;		}
+	else if (unitToBuild == c_ZU_Mutalisk)		{ buildAbility = "LarvaTrain"; buildIndex = 4;		}
+	else if (unitToBuild == c_ZU_Overlord)		{ buildAbility = "LarvaTrain"; buildIndex = 2;		}
+	else if (unitToBuild == c_ZU_Queen)			{ buildAbility = "TrainQueen"; 							}
+	else if (unitToBuild == c_ZU_Roach)			{ buildAbility = "LarvaTrain"; buildIndex = 9;		}
+	else if (unitToBuild == c_ZU_Ultralisk)	{ buildAbility = "LarvaTrain"; buildIndex = 6;		}
+	else if (unitToBuild == c_ZU_Zergling)		{ buildAbility = "LarvaTrain"; buildIndex = 1;		}
+	else { GTErrorLog(player, c_GTError, c_GTProduction, "no support for " + unitToBuild + " in GTTrainAtBuilding function!"); }
+	// TODO: add support for more units
+	
+	buildOrder = AITacticalOrderIndex(player, building, buildAbility, buildIndex);
+	if (buildOrder == null) {
+		GTErrorLog(player, c_GTWarning, c_GTProduction, "GTTrainAtBuilding: unable to create build order for: " + UnitGetType(building) + " trying to build a " + unitToBuild);
+	}
+	else if (!UnitOrderIsValid(building, buildOrder)) {
+		GTErrorLog(player, c_GTWarning, c_GTProduction, "GTTrainAtBuilding: build order is invalid for: " + UnitGetType(building) + " trying to build a " + unitToBuild);
+	}
+	else if (GTUnitIssueOrder(building, buildOrder, c_orderQueueReplace, GTUnitOrderIssueUniqueID())) {
+		GTUnitProductionRecordAdd(player, unitToBuild, c_GTUnitProductionStarted);
+	}
+}
+
+bool GTBuildP(unit worker, string building, point location) { // to do: change to return bool to handle blocking
+	string buildAbility;
+	int buildIndex;
+	int player = UnitGetOwner(worker);
+	order ord;
+	int i = 0;
+	// DebugAI(building);
+	if (location == null) {
+		GTErrorLog(player, c_GTError, c_GTProduction, "GTBuildP: null location trying to build a " + building); 
+		return false;
+	}
+	
+	// to do: what if base is under attack?
+	
+	if (!UnitIsAlive(worker)) {
+		GTErrorLog(player, c_GTLog, c_GTProduction, "GTBuildP: worker died trying to build a " + building); 
+		// to do: figure out what to do when worker is dead
+		return false;
+	}
+	
+	// find build ability
+	     if (building == c_TB_CommandCenter) 	{ buildAbility = "TerranBuild"; buildIndex = 0; }
+	else if (building == c_TB_SupplyDepot) 	{ buildAbility = "TerranBuild"; buildIndex = 1; }
+	else if (building == c_TB_Refinery) 		{ buildAbility = "TerranBuild"; buildIndex = 2; }
+	else if (building == c_TB_Barracks) 		{ buildAbility = "TerranBuild"; buildIndex = 3; }
+	else if (building == c_TB_EngineeringBay) { buildAbility = "TerranBuild"; buildIndex = 4; }
+	else if (building == c_TB_MissileTurret) 	{ buildAbility = "TerranBuild"; buildIndex = 5; }
+	else if (building == c_TB_Bunker)			{ buildAbility = "TerranBuild"; buildIndex = 6; }
+	else if (building == c_TB_SensorTower) 	{ buildAbility = "TerranBuild"; buildIndex = 8; }
+	else if (building == c_TB_GhostAcademy) 	{ buildAbility = "TerranBuild"; buildIndex = 9; }
+	else if (building == c_TB_Factory) 			{ buildAbility = "TerranBuild"; buildIndex = 10; }
+	else if (building == c_TB_Starport) 		{ buildAbility = "TerranBuild"; buildIndex = 11; }
+	else if (building == c_TB_Armory) 			{ buildAbility = "TerranBuild"; buildIndex = 13; }
+	else if (building == c_TB_FusionCore) 		{ buildAbility = "TerranBuild"; buildIndex = 15; }
+	else if (building == c_PB_Nexus) 			{ buildAbility = "ProtossBuild"; buildIndex = 0; }
+	else if (building == c_PB_Pylon) 			{ buildAbility = "ProtossBuild"; buildIndex = 1; }
+	else if (building == c_PB_Assimilator) 	{ buildAbility = "ProtossBuild"; buildIndex = 2; }
+	else if (building == c_PB_Gateway) 			{ buildAbility = "ProtossBuild"; buildIndex = 3; }
+	else if (building == c_PB_Forge) 			{ buildAbility = "ProtossBuild"; buildIndex = 4; }
+	else if (building == c_PB_CyberneticsCore) { buildAbility = "ProtossBuild"; buildIndex = 14; }
+	else if (building == c_PB_PhotonCannon) 	{ buildAbility = "ProtossBuild"; buildIndex = 7; }
+	else if (building == c_PB_TwilightCouncil) { buildAbility = "ProtossBuild"; buildIndex = 6; }
+	else if (building == c_PB_TemplarArchives) { buildAbility = "ProtossBuild"; buildIndex = 10; }
+	else if (building == c_PB_DarkShrine) 		{ buildAbility = "ProtossBuild"; buildIndex = 11; }
+	else if (building == c_PB_Stargate) 		{ buildAbility = "ProtossBuild"; buildIndex = 9; }
+	else if (building == c_PB_FleetBeacon) 	{ buildAbility = "ProtossBuild"; buildIndex = 5; }
+	else if (building == c_PB_RoboticsFacility) { buildAbility = "ProtossBuild"; buildIndex = 13; }
+	else if (building == c_PB_RoboticsBay) 	{ buildAbility = "ProtossBuild"; buildIndex = 12; }
+	else if (building == c_ZB_Hatchery) 		{ buildAbility = "ZergBuild"; buildIndex = 0; }
+	else if (building == c_ZB_Extractor) 		{ buildAbility = "ZergBuild"; buildIndex = 2; }
+	else if (building == c_ZB_SpawningPool) 	{ buildAbility = "ZergBuild"; buildIndex = 3; }
+	else if (building == c_ZB_RoachWarren) 	{ buildAbility = "ZergBuild"; buildIndex = 13; }
+	else if (building == c_ZB_BanelingNest) 	{ buildAbility = "ZergBuild"; buildIndex = 10; }
+	else if (building == c_ZB_EvolutionChamber) { buildAbility = "ZergBuild"; buildIndex = 4; }
+	else if (building == c_ZB_SporeCrawler) 	{ buildAbility = "ZergBuild"; buildIndex = 15; }
+	else if (building == c_ZB_SpineCrawler) 	{ buildAbility = "ZergBuild"; buildIndex = 14; }
+	else if (building == c_ZB_Spire) 			{ buildAbility = "ZergBuild"; buildIndex = 6; }
+	else if (building == c_ZB_HydraliskDen) 	{ buildAbility = "ZergBuild"; buildIndex = 5; }
+	else if (building == c_ZB_NydusNetwork) 	{ buildAbility = "ZergBuild"; buildIndex = 9; }
+	else if (building == c_ZB_InfestationPit) { buildAbility = "ZergBuild"; buildIndex = 8; }
+	else if (building == c_ZB_UltraliskCavern) { buildAbility = "ZergBuild"; buildIndex = 7; }
+	else { GTErrorLog(player, c_GTError, c_GTProduction, "no support for " + building + " in GTBuildP function!"); }
+	
+	ord = AITacticalOrderIndex(player, worker, buildAbility, buildIndex);
+	if (ord == null) {
+		GTErrorLog(player, c_GTWarning, c_GTProduction, "GTBuildP: unable to create build order trying to build a " + building);
+		return false;
+	}
+	if (building == GTRacialGasBuilding(player)) {
+		// DebugAI("hihi");
+		OrderSetTargetUnit(ord, UnitGroupUnit(UnitGroup(null, -1, RegionCircle(location, 5.0), UnitFilterStr("RawResource;-"), 1), 1));
+	}
+	else { OrderSetTargetPoint(ord, location); }
+	
+	if (!UnitOrderIsValid(worker, ord)) {
+		GTErrorLog(player, c_GTWarning, c_GTProduction, "GTBuildP: unit order not valid trying to build a " + building);
+		return false;
+	}
+	// if (i > UnitGroupCount(workers, c_unitCountAlive)) {
+		// GTErrorLog(player, c_GTWarning, c_GTProduction, "unable to find a worker that will accept the build order");
+		// return;
+	// }
+
+	GTErrorLog(player, c_GTLog, c_GTProduction, "GTBuildP: building a " + building);
+	if (!GTUnitIssueOrder(worker, ord, c_orderQueueReplace, GTUnitOrderIssueUniqueID())){
+		GTErrorLog(player, c_GTError, c_GTProduction, "GTBuildP: unknown error trying to build a " + building);
+		return false;
+	}
+	return true;
+}
+
+void GTResearchAtBuilding(int player, unit building, string upgrade) {
+	string ability;
+	int index = 0;
+	order ord;
+	
+		 if (upgrade == c_TR_MarineStimPack)		{ ability = "BarracksTechLabResearch";	index = 0;	}
+	else if (upgrade == c_TR_MarineShield)			{ ability = "BarracksTechLabResearch";	index = 1;	}
+	else if (upgrade == c_TR_MarauderSlow)			{ ability = "BarracksTechLabResearch";	index = 2;	}
+	else if (upgrade == c_TR_ReaperSpeed)			{ ability = "MercCompoundResearch";		index = 3;	}
+	else if (upgrade == c_TR_HellionDamage)			{ ability = "FactoryTechLabResearch";	index = 1;	}
+	else if (upgrade == c_TR_SiegeTankSiege)		{ ability = "FactoryTechLabResearch";	index = 0;	}
+	else if (upgrade == c_TR_ThorCannons)			{ ability = "FactoryTechLabResearch";	index = 2;	}
+	else if (upgrade == c_TR_MedivacEnergy)			{ ability = "StarportTechLabResearch";	index = 2;	}
+	else if (upgrade == c_TR_RavenTimed)			{ ability = "StarportTechLabResearch";	index = 7;	}
+	else if (upgrade == c_TR_RavenEnergy)			{ ability = "StarportTechLabResearch";	index = 3;	}
+	else if (upgrade == c_TR_RavenMissiles)			{ ability = "StarportTechLabResearch";	index = 6;	}
+	else if (upgrade == c_TR_BansheeCloak)			{ ability = "StarportTechLabResearch";	index = 0;	}
+	else if (upgrade == c_TR_InfantryWeapons1)		{ ability = "EngineeringBayResearch";	index = 2;	}
+	else if (upgrade == c_TR_InfantryWeapons2)		{ ability = "EngineeringBayResearch";	index = 3;	}
+	else if (upgrade == c_TR_InfantryWeapons3)		{ ability = "EngineeringBayResearch";	index = 4;	}
+	else if (upgrade == c_TR_InfantryArmor1)		{ ability = "EngineeringBayResearch";	index = 6;	}
+	else if (upgrade == c_TR_InfantryArmor2)		{ ability = "EngineeringBayResearch";	index = 7;	}
+	else if (upgrade == c_TR_InfantryArmor3)		{ ability = "EngineeringBayResearch";	index = 8;	}
+	else if (upgrade == c_TR_BuildingArmor)			{ ability = "EngineeringBayResearch";	index = 1;	}
+	else if (upgrade == c_TR_BunkerSpace)			{ ability = "EngineeringBayResearch";	index = 5;	}
+	else if (upgrade == c_TR_MissileTurretRange)	{ ability = "EngineeringBayResearch";	index = 0;	}
+	else if (upgrade == c_TR_VehicleWeapons1)		{ ability = "ArmoryResearch";			index = 5;	}
+	else if (upgrade == c_TR_VehicleWeapons2)		{ ability = "ArmoryResearch";			index = 6;	}
+	else if (upgrade == c_TR_VehicleWeapons3)		{ ability = "ArmoryResearch";			index = 7;	}
+	else if (upgrade == c_TR_VehiclePlating1)		{ ability = "ArmoryResearch";			index = 2;	}
+	else if (upgrade == c_TR_VehiclePlating2)		{ ability = "ArmoryResearch";			index = 3;	}
+	else if (upgrade == c_TR_VehiclePlating3)		{ ability = "ArmoryResearch";			index = 4;	}
+	else if (upgrade == c_TR_ShipWeapons1)			{ ability = "ArmoryResearch";			index = 11;	}
+	else if (upgrade == c_TR_ShipWeapons2)			{ ability = "ArmoryResearch";			index = 12;	}
+	else if (upgrade == c_TR_ShipWeapons3)			{ ability = "ArmoryResearch";			index = 13;	}
+	else if (upgrade == c_TR_ShipPlating1)			{ ability = "ArmoryResearch";			index = 8;	}
+	else if (upgrade == c_TR_ShipPlating2)			{ ability = "ArmoryResearch";			index = 9;	}
+	else if (upgrade == c_TR_ShipPlating3)			{ ability = "ArmoryResearch";			index = 10;	}
+	else if (upgrade == c_TR_GhostCloak)			{ ability = "GhostAcademyResearch";		index = 0;	}
+	else if (upgrade == c_TR_GhostEnergy)			{ ability = "GhostAcademyResearch";		index = 1;	}
+	else if (upgrade == c_TR_BattlecruiserYamato)	{ ability = "FusionCoreResearch";		index = 0;	}
+	else if (upgrade == c_TR_BattlecruiserEnergy)	{ ability = "FusionCoreResearch";		index = 1;	}
+	else if (upgrade == c_TB_OrbitalCommand)		{ ability = "UpgradeToOrbital";						}
+	else if (upgrade == c_TB_PlanetaryFortress)		{ ability = "UpgradeToPlanetaryFortress";			}
+	else if (upgrade == c_PR_AirArmor1)				{ ability = "CyberneticsCoreResearch";	index = 3;	}
+	else if (upgrade == c_PR_AirArmor2)				{ ability = "CyberneticsCoreResearch";	index = 4;	}
+	else if (upgrade == c_PR_AirArmor3)				{ ability = "CyberneticsCoreResearch";	index = 5;	}
+	else if (upgrade == c_PR_AirWeapons1)			{ ability = "CyberneticsCoreResearch";	index = 0;	}
+	else if (upgrade == c_PR_AirWeapons2)			{ ability = "CyberneticsCoreResearch";	index = 1;	}
+	else if (upgrade == c_PR_AirWeapons3)			{ ability = "CyberneticsCoreResearch";	index = 2;	}
+	else if (upgrade == c_PR_CarrierLaunch)			{ ability = "FleetBeaconResearch";		index = 1;	}
+	else if (upgrade == c_PR_ColossusRange)			{ ability = "RoboticsBayResearch";		index = 5;	}
+	else if (upgrade == c_PR_SentryHallucination)	{ ability = "CyberneticsCoreResearch";	index = 9;	}
+	else if (upgrade == c_PR_GroundArmor1)			{ ability = "ForgeResearch";			index = 3;	}
+	else if (upgrade == c_PR_GroundArmor2)			{ ability = "ForgeResearch";			index = 4;	}
+	else if (upgrade == c_PR_GroundArmor3)			{ ability = "ForgeResearch";			index = 5;	}
+	else if (upgrade == c_PR_GroundWeapons1)		{ ability = "ForgeResearch";			index = 0;	}
+	else if (upgrade == c_PR_GroundWeapons2)		{ ability = "ForgeResearch";			index = 1;	}
+	else if (upgrade == c_PR_GroundWeapons3)		{ ability = "ForgeResearch";			index = 2;	}
+	else if (upgrade == c_PR_HighTemplarEnergy)		{ ability = "TemplarArchivesResearch";	index = 0;	}
+	else if (upgrade == c_PR_HighTemplarPsiStorm)	{ ability = "TemplarArchivesResearch";	index = 4;	}
+	else if (upgrade == c_PR_ObserverSpeed)			{ ability = "RoboticsBayResearch";		index = 1;	}
+	else if (upgrade == c_PR_Shields1)				{ ability = "ForgeResearch";			index = 6;	}
+	else if (upgrade == c_PR_Shields2)				{ ability = "ForgeResearch";			index = 7;	}
+	else if (upgrade == c_PR_Shields3)				{ ability = "ForgeResearch";			index = 8;	}
+	else if (upgrade == c_PR_StalkerBlink)			{ ability = "TwilightCouncilResearch";	index = 1;	}
+	else if (upgrade == c_PR_WarpGateResearch)		{ ability = "CyberneticsCoreResearch";	index = 6;	}
+	else if (upgrade == c_PR_WarpPrismSpeed)		{ ability = "RoboticsBayResearch";		index = 2;	}
+	else if (upgrade == c_PR_ZealotCharge)			{ ability = "TwilightCouncilResearch";	index = 0;	}
+	else if (upgrade == c_PB_WarpGate)				{ ability = "UpgradeToWarpGate";					}
+	else if (upgrade == c_ZR_BanelingSpeed)			{ ability = "BanelingNestResearch";		index = 0;	}
+	else if (upgrade == c_ZR_Burrow)				{ ability = "LairResearch";				index = 3;	}
+	else if (upgrade == c_ZR_FlyerAttacks1)			{ ability = "SpireResearch";			index = 0;	}
+	else if (upgrade == c_ZR_FlyerAttacks2)			{ ability = "SpireResearch";			index = 1;	}
+	else if (upgrade == c_ZR_FlyerAttacks3)			{ ability = "SpireResearch";			index = 2;	}
+	else if (upgrade == c_ZR_FlyerCarapace1)		{ ability = "SpireResearch";			index = 3;	}
+	else if (upgrade == c_ZR_FlyerCarapace2)		{ ability = "SpireResearch";			index = 4;	}
+	else if (upgrade == c_ZR_FlyerCarapace3)		{ ability = "SpireResearch";			index = 5;	}
+	else if (upgrade == c_ZR_GroundCarapace1)		{ ability = "evolutionchamberresearch";	index = 3;	}
+	else if (upgrade == c_ZR_GroundCarapace2)		{ ability = "evolutionchamberresearch";	index = 4;	}
+	else if (upgrade == c_ZR_GroundCarapace3)		{ ability = "evolutionchamberresearch";	index = 5;	}
+	else if (upgrade == c_ZR_MeleeAttacks1)			{ ability = "evolutionchamberresearch";	index = 0;	}
+	else if (upgrade == c_ZR_MeleeAttacks2)			{ ability = "evolutionchamberresearch";	index = 1;	}
+	else if (upgrade == c_ZR_MeleeAttacks3)			{ ability = "evolutionchamberresearch";	index = 2;	}
+	else if (upgrade == c_ZR_MissileAttacks1)		{ ability = "evolutionchamberresearch";	index = 6;	}
+	else if (upgrade == c_ZR_MissileAttacks2)		{ ability = "evolutionchamberresearch";	index = 7;	}
+	else if (upgrade == c_ZR_MissileAttacks3)		{ ability = "evolutionchamberresearch";	index = 8;	}
+	else if (upgrade == c_ZR_HydraliskRange)		{ ability = "HydraliskDenResearch";		index = 2;	}
+	else if (upgrade == c_ZR_InfestorEnergy)		{ ability = "InfestationPitResearch";	index = 2;	}
+	else if (upgrade == c_ZR_InfestorParasite)		{ ability = "InfestationPitResearch";	index = 1;	}
+	else if (upgrade == c_ZR_OverlordTransport)		{ ability = "LairResearch";				index = 2;	}
+	else if (upgrade == c_ZR_OverseerSpeed)			{ ability = "LairResearch";				index = 1;	}
+	else if (upgrade == c_ZR_RoachUnderground)		{ ability = "RoachWarrenResearch";		index = 2;	}
+	else if (upgrade == c_ZR_RoachSpeed)			{ ability = "RoachWarrenResearch";		index = 1;	}
+	else if (upgrade == c_ZR_ZerglingHaste)			{ ability = "SpawningPoolResearch";		index = 0;	}
+	else if (upgrade == c_ZR_ZerglingSpeed)			{ ability = "SpawningPoolResearch";		index = 1;	}
+	else if (upgrade == c_ZR_UltraliskArmor)		{ ability = "UltraliskCavernResearch";	index = 2;	}
+	else if (upgrade == c_ZB_Lair)					{ ability = "UpgradeToLair";						}
+	else if (upgrade == c_ZB_Hive)					{ ability = "UpgradeToHive";						}
+	else if (upgrade == c_ZB_GreaterSpire)			{ ability = "UpgradeToGreaterSpire";				}
+	else { 
+		GTErrorLog(player, c_GTError, c_GTProduction, "no support for " + upgrade + " in GTResearchAtBuilding function!");
+	}
+	
+	ord = AITacticalOrderIndex(player, building, ability, index);
+	if (ord == null) {
+		GTErrorLog(player, c_GTWarning, c_GTProduction, "unable to create build order for: " + UnitGetType(building) + " trying to research " + upgrade);
+	}
+	else if (!UnitOrderIsValid(building, ord)) {
+		GTErrorLog(player, c_GTWarning, c_GTProduction, "build order is invalid for: " + UnitGetType(building) + " trying to research " + upgrade);
+	}
+	else if (GTUnitIssueOrder(building, ord, c_orderQueueAddToEnd, GTUnitOrderIssueUniqueID())) {
+		if (StringFind(ability, "UpgradeTo", true) > -1) {
+			GTUnitSetData(building, c_GTUnitDataUpgradeTime, FixedToInt(GTGameTime()));
+		}
+		GTUnitProductionRecordAdd(player, upgrade, c_GTUnitProductionStarted);
+		return;
+	}
+}
+
+int GTWRtBIssueUniqueID(){
+	g_GTWRtBUniqueID += 1;
+	return g_GTWRtBUniqueID;
+}
+
+void GTWRtBSubmitItem(int player, string unitType, point buildLoc, unit worker){
+	string id = IntToString(GTWRtBIssueUniqueID());
+	unitgroup wrtbGroup = GTTableGetUnitGroup(player, c_GTWRtBWorkerGroup);
+	GTTableSetPoint(player, c_GTWRtBItemPoint + id, buildLoc);
+	GTTableSetUnit(player, c_GTWRtBItemUnit + id, worker);
+	GTTableSetString(player, c_GTWRtBItemBuilding + id, unitType);
+	GTUnitSetData(worker, c_GTUnitDataAssignedWRtBID, StringToInt(id));
+	UnitGroupAdd(wrtbGroup, worker);
+}
+
+int GTWRtBSearch(int player, string unitType){
+	// return an id in WRtB with the corresponding unitType
+	// return -1 if not found
+	unitgroup wrtbGroup = GTTableGetUnitGroup(player, c_GTWRtBWorkerGroup);
+	unit u;
+	int id;
+	int i = 1;
+	while (i <= UnitGroupCount(wrtbGroup, c_unitCountAll)){
+		u = UnitGroupUnit(wrtbGroup, i);
+		id = GTUnitGetData(u, c_GTUnitDataAssignedWRtBID);
+		if (!UnitIsAlive(u)){ // dead unit? remove data
+			GTTableRemove(player, c_GTWRtBItemUnit + IntToString(id));
+			GTTableRemove(player, c_GTWRtBItemPoint + IntToString(id));
+			GTTableRemove(player, c_GTWRtBItemBuilding + IntToString(id));
+			UnitGroupRemove(GTTableGetUnitGroup(player, c_GTWRtBWorkerGroup), u);
+			GTUnitSetData(u, c_GTUnitDataJob, c_GTUnitJobNothing);
+		}
+		else if (GTTableGetString(player, c_GTWRtBItemBuilding + IntToString(id)) == unitType){
+			return id;
+		}
+		else {
+			i += 1;
+		}
+	}
+	return -1;
+}
+
+void GTPQSIterOverQueue(int player){
+// steps that this function follows: (information might be slightly outdated, read as guideline instead)
+// (note: unitType can be a structure, unit, or a research/upgrade)
+// (note2: countAtOnce should probably only apply for structures; just put in multiple lines for units)
+// 1. - Each PQS item consists of: unitType, countAtOnce, and BuildFlag
+	// - If countAtOnce > 1, need to save that many times of resources
+	// - morph buildflag if it is default => figure out whether or not the buildings should be built close together
+	// - figure out the build location of each building => multiple travelling workers => multiple RPS queues
+// 2. Get current resources banked, and deduct it from resources reserved by RPS => available minerals/gas
+// 3. For each priority queue (starting with the highest priority), read items from the queue in sequence
+// 4. a) if unitType is a structure: 
+	// - figure out best build location, find the nearest available worker, and estimate income over worker travel time
+	// - figure out structure requirement completion percentage
+	// - reserve resources proportional to the minimun of (required completion percentage * total requirement production time) and (required resource + income over travel time) <- wrong! reserve resource formula reworked!
+	// - if will have enough resources once worker travels to the build location, then issue worker command to go to that location, at the same time add an entry to RPS, and flag that worker as 'busy'/'building a building'
+	// - note: allow flexibility for a scouting worker to build something -- how?
+	// b) if unitType is a research/upgrade:
+	// - figure out requirement completion percentage
+	// - if requirement over 75% done, build it if there is enough resources, else reserve resources proportional to (required completion percentage * total requirement production time) <- wrong! reserve resource formula reworked!
+	// c) if unitType is a unit:
+	// - figure out requirement completion percentage
+	// - protoss gateway units: find best unit warp-in location (needed for harrassment, for example)
+	// - zerg queens: use closest available hatchery?
+	// - if requirement over 75% done, build it if there is enough resources, else reserve resources proportional to (required completion percentage * total requirement production time) <- wrong! reserve resource formula reworked!
+	// - if supplies available < supplies needed, see if want to reserve resources according to supply production
+// 5. Figure out the best way to claim a building
+
+// => Needed functions:
+// - find build position based on build flag and unitType
+// - morph default build flag
+
+	string race = PlayerRace(player);
+	string item = c_GTEmptyItem; // item = (unitType, countAtOnce, buildFlag) in string form
+	string unitType;	// word index = 1
+	int countAtOnce;	// word index = 2
+	int buildFlag;		// word index = 3
+	int csIndex;		// word index = 4 (corresponding to commander script line index)
+	int id; 	// will be a unique id issued by the WRtB system
+	unitgroup buildings = GTMergeSortByProductionProgress(player, GTTableGetUnitGroup(player, g_Buildings)); // includes zerglings, corruptors, and larvae. sorted according to production progress
+	fixed reqProgress;
+	fixed availProgress;
+	int i;
+	int prio = c_GTQPriorityExtreme;
+	point availResources = Point(IntToFixed(PlayerGetPropertyInt(player, c_playerPropMinerals)), IntToFixed(PlayerGetPropertyInt(player, c_playerPropVespene))); // will decrease as the function reserves more minerals
+	point unitCost;
+	point buildLoc;
+	bool endOfQueue;
+	unit worker;
+	unitgroup workers = UnitGroupCopy(GTTableGetUnitGroup(player, g_Workers));
+	order ord;
+	unit availBuilding;
+	fixed travelTime;
+	fixed reqRemainingTime;
+	point income = GTGetPlayerIncome(player);
+	point incomeOverTravelTime;
+	point tempResResources;
+	int requiredAddon;
+	fixed resTimeForMinerals = 0.0;
+	fixed resTimeForGas = 0.0;
+	
+	while (prio >= c_GTQPriorityVeryLow){
+		endOfQueue = false;
+		i = 0;
+		GTErrorLog(player, c_GTLog, c_GTProduction, "---- GTPQSIterOverQueue: Priority = " + IntToString(prio) + " ----");
+		GTErrorLog(player, c_GTLog, c_GTProduction, "QueueStr: " + GTQGetQueueString(player, c_GTQProductionQueueSystem, prio));
+		while (!endOfQueue){
+			item = GTQGet(player, c_GTQProductionQueueSystem, prio, i);
+			if (item == c_GTEmptyItem){ endOfQueue = true; }
+			else if (PointGetX(availResources) >= 50){
+				unitType = StringWord(item, 1);
+				countAtOnce = StringToInt(StringWord(item, 2));
+				buildFlag = StringToInt(StringWord(item, 3));
+				csIndex = StringToInt(StringWord(item, 4));
+				unitCost = GTResourceCost(unitType);
+				if (prio == c_GTQPriorityLow){
+					if (PointGetX(unitCost) > 0){ unitCost += Point(100, 0); }
+					if (PointGetY(unitCost) > 0){ unitCost += Point(0, 100); }
+				}
+				if (prio == c_GTQPriorityVeryLow){
+					if (PointGetX(unitCost) > 0){ unitCost += Point(200, 0); }
+					if (PointGetY(unitCost) > 0){ unitCost += Point(0, 200); }
+				}
+				unitCost = Point(PointGetX(unitCost) * countAtOnce, PointGetY(unitCost) * countAtOnce);
+
+				// if unitType is a structure to be built by a worker
+				// worker = null;
+				if (GTGetUnitProducedByType(unitType) == GTRacialWorker(player)){
+					id = GTWRtBSearch(player, unitType);
+					if (id != -1){ // if an item of unitType exists in WRtB
+						GTWRtBManageID(player, id, csIndex, availResources);
+						availResources -= unitCost;
+					}
+					else { // item of unitType does not exist (yet) in WRtB
+						buildLoc = GTFindBestBuildPoint(player, unitType); // change to also take buildFlag?
+						if (buildLoc != null && buildLoc != Point(0.0, 0.0)){
+							while (worker == null || UnitGetType(worker) == c_TU_MULE || GTUnitGetData(worker, c_GTUnitDataJob) != c_GTUnitJobMineralHarvesting){
+								// to do: 
+								if (UnitGroupCount(workers, c_unitCountAll) <= 0){ return; }
+								UnitGroupRemove(workers, worker);
+								worker = UnitGroupNearestUnit(workers, buildLoc);
+							}
+							travelTime = GTEstimateWorkerTravelTime(worker, buildLoc, false);
+							
+							incomeOverTravelTime = GTIncomeOverTime(player, travelTime, income);
+							reqProgress = GTGetConstructionProgress(player, GTUnitRequirement(unitType), false) * 0.01;
+							reqRemainingTime = (1 - reqProgress) * GTTimeCost(GTUnitRequirement(unitType));
+							// reqRemainingTime = MaxF(reqRemainingTime, travelTime);
+							
+							// send worker only if (travelTime >= requirement completion time && incomeOverTravelTime + availResources >= unitCost)
+							tempResResources = (availResources + incomeOverTravelTime - Point(resTimeForMinerals * PointGetX(income), resTimeForGas * PointGetY(income)) - unitCost);
+							if (travelTime >= reqRemainingTime && (PointGetX(tempResResources) >= 0.0 && PointGetY(tempResResources) >= 0.0)){
+								// put into WRtB
+								ord = AICreateOrder(player, c_AB_Move, 0);
+								OrderSetTargetPoint(ord, buildLoc);
+								GTUnitIssueOrder(worker, ord, c_orderQueueReplace, GTUnitOrderIssueUniqueID());
+								GTWRtBSubmitItem(player, unitType, buildLoc, worker);
+								UnitGroupRemove(GTGetMineralHarvesters(player, GTUnitGetData(worker, c_GTUnitDataAssignedToBase)), worker);
+								// to do: worker did not necessarily come from mineral harvester group...
+								
+								GTUnitSetData(worker, c_GTUnitDataJob, c_GTUnitJobConstructing); // set worker job
+								
+								if (countAtOnce > 1){
+									GTQDecrCount(player, c_GTQProductionQueueSystem, prio, i);
+									// DebugAI("GTQDecrCount: " + GTQGetQueueString(player, c_GTQProductionQueueSystem, prio));
+								}
+								else {
+									GTQRemove(player, c_GTQProductionQueueSystem, prio, i); // remove item from PQS; necessary?
+								}
+								GTErrorLog(player, c_GTLog, c_GTProduction, "GTPQSIterOverQueue: will have enough resources or req almost complete, sending worker to build " + unitType);
+								i -= 1; 	// remember to adjust i
+								// TO DO: ADD SUPPORT FOR BUILDFLAG
+							}
+							if (reqProgress > 0.00){
+								// reserve resources = min of zero and (unitCost - reqRemainingTime * income)
+								tempResResources = GTClampPointAboveZero(unitCost - GTIncomeOverTime(player, reqRemainingTime, income));
+								availResources -= tempResResources;
+								if (PointGetX(tempResResources) > 0.0){ resTimeForMinerals += PointGetX(unitCost - tempResResources) / PointGetX(income); }
+								if (PointGetY(tempResResources) > 0.0){ resTimeForGas += PointGetY(unitCost - tempResResources) / PointGetY(income); }
+								GTErrorLog(player, c_GTLog, c_GTProduction, "GTPQSIterOverQueue: reserving " + PointToString(tempResResources) + " for " + unitType + " , req done " + FixedToString(reqProgress, 2));
+							}
+							else {
+								GTErrorLog(player, c_GTWarning, c_GTProduction, "GTPQSIterOverQueue: cannot find buildpoint for " + unitType);
+							}
+						}
+					}
+				}
+				
+				else { // unitType is a research/upgrade or unit
+					availBuilding = null;
+					if (race == "Terr"){
+						requiredAddon = GTGetRequiredAddonStatus(unitType);
+						availBuilding = GTGetNextAvailableBuilding(player, GTGetUnitProducedByType(unitType), buildings, requiredAddon);
+						if (unitType == c_TU_SCV) {
+							if (availBuilding == null) {
+								availBuilding = GTGetNextAvailableBuilding(player, c_TB_OrbitalCommand, buildings, c_GTAddonAny);
+							}
+							else if (GTGetProductionProgress(availBuilding) < GTGetProductionProgress(GTGetNextAvailableBuilding(player, c_TB_OrbitalCommand, buildings, c_GTAddonAny))) {
+								availBuilding = GTGetNextAvailableBuilding(player, c_TB_OrbitalCommand, buildings, c_GTAddonAny);
+							}
+							if (availBuilding == null) {
+								availBuilding = GTGetNextAvailableBuilding(player, c_TB_PlanetaryFortress, buildings, c_GTAddonAny);
+							}
+							else if (GTGetProductionProgress(availBuilding) < GTGetProductionProgress(GTGetNextAvailableBuilding(player, c_TB_PlanetaryFortress, buildings, c_GTAddonAny))) {
+								availBuilding = GTGetNextAvailableBuilding(player, c_TB_PlanetaryFortress, buildings, c_GTAddonAny);
+							}
+						}
+					}
+					else if (race == "Zerg"){
+						// [insert Zerg specific conditions here]
+						availBuilding = GTGetNextAvailableBuilding(player, GTGetUnitProducedByType(unitType), buildings, c_GTAddonAny);
+					
+					}
+					else { // race == "Prot"
+						GTWarpGateTransform(player);
+						if (unitType != c_PB_WarpGate && GTGetUnitProducedByType(unitType) == c_PB_Gateway && GTGetConstructionProgress(player, c_PR_WarpGateResearch, false) > 85.0) {
+							availBuilding = GTGetNextAvailableBuilding(player, c_PB_WarpGate, buildings, c_GTAddonAny);
+						}
+						else {
+							availBuilding = GTGetNextAvailableBuilding(player, GTGetUnitProducedByType(unitType), buildings, c_GTAddonAny);
+						}
+					
+					}
+					availProgress = GTGetProductionProgress(availBuilding) * 0.01;
+					reqRemainingTime = GTBuildingUpgradeTimeRemaining(availBuilding);
+					
+					// if unitType is a unit
+					if (UnitTypeTestFlag(unitType, c_unitFlagMovable) && !UnitTypeTestAttribute(unitType, c_unitAttributeStructure)){
+						// if avail supply <= supplies needed (i.e. supply blocked)
+						if (UnitTypeGetProperty(unitType, c_unitPropSuppliesUsed) > 0 && UnitTypeGetProperty(unitType, c_unitPropSuppliesUsed) > MinI(PlayerGetPropertyInt(player, c_playerPropSuppliesMade), 200) - PlayerGetPropertyInt(player, c_playerPropSuppliesUsed)){
+							if (PlayerGetPropertyInt(player, c_playerPropSuppliesMade) < 200) {
+								reqProgress = GTGetConstructionProgress(player, GTRacialSupply(player), true) * 0.01; // supply progress
+								reqRemainingTime = MaxF(reqRemainingTime, (1.0 - reqProgress) * GTTimeCost(GTRacialSupply(player)));
+							}
+						}
+						else {
+							reqProgress = 1.00; // supply progress = 1.00
+						}
+						
+						// take the min of supply progress and unitType requirement progress
+						reqProgress = MinF(GTGetConstructionProgress(player, GTUnitRequirement(unitType), false) * 0.01, reqProgress);
+						reqRemainingTime = MaxF(reqRemainingTime, (1.0 - GTGetConstructionProgress(player, GTUnitRequirement(unitType), false) * 0.01) * GTTimeCost(GTUnitRequirement(unitType)));
+						
+						// take the min of reqProgress and availBuilding progress
+						reqProgress = MinF(reqProgress, availProgress);
+						
+						// if there is enough resources and reqProgress >= 1.00, build the unit
+						if ((reqProgress >= 1.00 && availProgress >= 0.80) && (PointGetX(availResources) >= PointGetX(unitCost) && PointGetY(availResources) >= PointGetY(unitCost))){ // note: protoss warp in may not have same progress requirements
+							if (UnitGetType(availBuilding) == c_PB_WarpGate){ GTWarpTrain(player, availBuilding, unitType); }
+							else { GTTrainAtBuilding(player, availBuilding, unitType); }
+							availResources -= unitCost;
+							GTCSDeactivate(player, csIndex);
+						}
+						else {
+							if (reqProgress > 0.00){
+								tempResResources = GTClampPointAboveZero(unitCost - GTIncomeOverTime(player, reqRemainingTime, income));
+								availResources -= tempResResources; // reserve resources
+								if (PointGetX(tempResResources) > 0.0){ resTimeForMinerals += PointGetX(unitCost - tempResResources) / PointGetX(income); }
+								if (PointGetY(tempResResources) > 0.0){ resTimeForGas += PointGetY(unitCost - tempResResources) / PointGetY(income); }
+								if (reqProgress > 0.75){ UnitGroupRemove(buildings, availBuilding); }
+								GTErrorLog(player, c_GTLog, c_GTProduction, "GTPQSIterOverQueue: reserving " + PointToString(tempResResources) + " for " + unitType + " , req done " + FixedToString(reqProgress, 2) + ", req time remaining = " + FixedToString(reqRemainingTime, 2));
+							}
+							else {
+								GTErrorLog(player, c_GTLog, c_GTProduction, "GTPQSIterOverQueue: not reserving any resources for " + unitType + " , req done " + FixedToString(reqProgress, 2));
+							}
+						}
+					}
+					else { // unitType is an upgrade, research, or addon
+						reqProgress = MinF(GTGetConstructionProgress(player, GTUnitRequirement(unitType), false) * 0.01, availProgress);
+						reqRemainingTime = MaxF(reqRemainingTime, (1 - reqProgress) * GTTimeCost(GTUnitRequirement(unitType)));
+						
+						if ((reqProgress >= 1.00 && availProgress >= 0.80) && (PointGetX(availResources) >= PointGetX(unitCost) && PointGetY(availResources) >= PointGetY(unitCost))){
+							if (StringFind(unitType, "TechLab", true) > 0 || StringFind(unitType, "Reactor", true) > 0) {
+								GTBuildAddonAtBuilding(player, availBuilding, unitType);
+							}
+							else {
+								GTResearchAtBuilding(player, availBuilding, unitType);
+							}
+							availResources -= unitCost;
+							GTCSDeactivate(player, csIndex);
+						}
+						else {
+							if (reqProgress > 0.00){
+								tempResResources = GTClampPointAboveZero(unitCost - GTIncomeOverTime(player, reqRemainingTime, income));
+								availResources -= tempResResources; // reserve resources
+								if (PointGetX(tempResResources) > 0.0){ 
+									resTimeForMinerals += (PointGetX(unitCost) - PointGetX(tempResResources)) / (PointGetX(income) + 0.01);
+								}
+								if (PointGetY(tempResResources) > 0.0){
+									resTimeForGas += (PointGetY(unitCost) - PointGetY(tempResResources)) / (PointGetY(income) + 0.01);
+								}
+								if (reqProgress > 0.75){ 
+									UnitGroupRemove(buildings, availBuilding);
+								}
+								GTErrorLog(player, c_GTLog, c_GTProduction, "GTPQSIterOverQueue: reserving " + PointToString(tempResResources) + " for " + unitType + " , req done " + FixedToString(reqProgress, 2) + ", req time remaining = " + FixedToString(reqRemainingTime, 2));
+							}
+							else {
+								GTErrorLog(player, c_GTLog, c_GTProduction, "GTPQSIterOverQueue: not reserving any resources for " + unitType + " , req done " + FixedToString(reqProgress, 2));
+							}
+						}
+					}
+				}
+			}
+			i += 1;
+		}
+		prio -= 1;
+	}
+	
+}
+
+void GTWRtBManageID(int player, int id, int csIndex, point availResources){
+// called only in GTPQSIterQueue, will manage the an item in WRtB of identifier id (specifically, manage the worker)
+	unit worker = GTTableGetUnit(player, c_GTWRtBItemUnit + IntToString(id));
+	point buildLoc = GTTableGetPoint(player, c_GTWRtBItemPoint + IntToString(id));
+	string unitType = GTTableGetString(player, c_GTWRtBItemBuilding + IntToString(id));
+	point unitCost = GTResourceCost(unitType);
+	int pathingcost;
+	order ord;
+	
+	// attempt to build the building if worker is close enough to buildLocation
+	if ((unitType != GTRacialGasBuilding(player) && DistanceBetweenPoints(UnitGetPosition(worker), buildLoc) <= 1.0)
+			|| (unitType == GTRacialGasBuilding(player) && DistanceBetweenPoints(UnitGetPosition(worker), buildLoc) <= 3.0)){
+
+		if (PointGetX(availResources) >= PointGetX(unitCost) && PointGetY(availResources) >= PointGetY(unitCost)){ // proceed if we can afford it
+		
+			// build the desired building
+			if (GTBuildP(worker, unitType, buildLoc)){
+				GTErrorLog(player, c_GTLog, c_GTProduction, "GTPQSIterOverQueue: executing WRtB item for " + unitType + ", id = " + IntToString(id));
+				GTCSDeactivate(player, csIndex);
+			
+				// after building, remove WRtB data from table since we're done with it
+				GTTableRemove(player, c_GTWRtBItemUnit + IntToString(id));
+				GTTableRemove(player, c_GTWRtBItemPoint + IntToString(id));
+				GTTableRemove(player, c_GTWRtBItemBuilding + IntToString(id));
+				UnitGroupRemove(GTTableGetUnitGroup(player, c_GTWRtBWorkerGroup), worker);
+				if (PlayerRace(player) == "Prot"){ // with protoss, we release the worker by giving it a job of 'nothing'
+					GTUnitSetData(worker, c_GTUnitDataJob, c_GTUnitJobNothing);
+				}
+			}
+			else if (!GTBuildingPlacementIsValid(player, unitType, buildLoc)){
+				// if cannot place building at this location, delete WRtB data
+				GTTableRemove(player, c_GTWRtBItemUnit + IntToString(id));
+				GTTableRemove(player, c_GTWRtBItemPoint + IntToString(id));
+				GTTableRemove(player, c_GTWRtBItemBuilding + IntToString(id));
+				UnitGroupRemove(GTTableGetUnitGroup(player, c_GTWRtBWorkerGroup), worker);
+				if (PlayerRace(player) == "Prot"){ // with protoss, we release the worker by giving it a job of 'nothing'
+					GTUnitSetData(worker, c_GTUnitDataJob, c_GTUnitJobNothing);
+				}
+			}
+		}
+	}
+	else {
+		pathingcost = AIPathingCostUnit(worker, buildLoc, false);
+		if (pathingcost > 0 || pathingcost < 1000){ // if pathable, send worker
+			ord = AICreateOrder(player, c_AB_Move, 0);
+			OrderSetTargetPoint(ord, buildLoc);
+			GTUnitIssueOrder(worker, ord, c_orderQueueReplace, GTUnitOrderIssueUniqueID());
+			GTErrorLog(player, c_GTLog, c_GTProduction, "GTPQSIterOverQueue: reserving " + PointToString(unitCost) + " for item in WRtB (" + unitType + ")");
+		}
+		else { // otherwise, delete this WRtB item and let PQS start a new one
+			GTErrorLog(player, c_GTLog, c_GTProduction, "GTPQSIterOverQueue: WRtB worker unable to path to buildLoc for " + unitType + ", id = " + IntToString(id));
+			GTTableRemove(player, c_GTWRtBItemUnit + IntToString(id));
+			GTTableRemove(player, c_GTWRtBItemPoint + IntToString(id));
+			GTTableRemove(player, c_GTWRtBItemBuilding + IntToString(id));
+			UnitGroupRemove(GTTableGetUnitGroup(player, c_GTWRtBWorkerGroup), worker);
+			if (PlayerRace(player) == "Prot"){ // with protoss, we release the worker by giving it a job of 'nothing'
+				GTUnitSetData(worker, c_GTUnitDataJob, c_GTUnitJobNothing);
+			}
+		}
+	}
+
+}
+
+point GTFindBestBuildPoint(int player, string building){
+// should check SubState System, walls, self/opponent army position, whatever,
+// then call GTFindBuildPoint with the appriopriate flag
+	point p;
+	int baseCount = GTGetBaseTakenCount(player);
+	int i = 0;
+	while (i < baseCount){
+		p = GTFindBuildPoint(player, building, GTGetFromBaseTakenList(player, i), c_GTBuildFlagDefault);
+		if (p != null){	return p; }
+		i += 1;
+	}
+	return null; // (should never get to this stage)
+}
+
+point GTFindBuildPoint(int player, string building, int base, int buildFlag){
+	// to do: everything!
+	unitgroup geysers;
+	unitgroup ug = UnitGroupEmpty();
+	unit u;
+	string cacheString;
+	fixed timeOfEntry;
+	point p;
+	// unit gasBuilding = UnitGroupCount(UnitGroup(GTRacialGasBuilding(player), player, RegionCircle(UnitGetPosition(u), 2.0), null, 1), c_unitCountAlive);
+	
+	GTErrorLog(player, c_GTLog, c_GTProduction, "GTFindBuildPoint: finding build point for " + building);
+	if (building == GTRacialGasBuilding(player)){ // don't care about buildFlag... I think
+		geysers = GTGetBaseGeysers(base); // already a copy
+		// remove geysers that already have a gas building
+		
+		while (UnitGroupCount(geysers, c_unitCountAll) > 0) {
+			u = UnitGroupUnit(geysers, 1);
+			// if (!AINearbyUnits(c_playerAny, c_PB_Assimilator, UnitGetPosition(u), 2.0, 1) && !AINearbyUnits(c_playerAny, c_ZB_Extractor, UnitGetPosition(u), 2.0, 1)
+				// && !AINearbyUnits(c_playerAny, c_TB_Refinery, UnitGetPosition(u), 2.0, 1)) {
+				// UnitGroupAdd(ug, u);
+			// }
+			if (UnitGroupCount(UnitGroup(c_PB_Assimilator, c_playerAny, RegionCircle(UnitGetPosition(u), 2.0), null, 1), c_unitCountAll) > 0){
+				UnitGroupRemove(geysers, u);
+			}
+			else if (UnitGroupCount(UnitGroup(c_ZB_Extractor, c_playerAny, RegionCircle(UnitGetPosition(u), 2.0), null, 1), c_unitCountAll) > 0){
+				UnitGroupRemove(geysers, u);
+			}
+			else if (UnitGroupCount(UnitGroup(c_TB_Refinery, c_playerAny, RegionCircle(UnitGetPosition(u), 2.0), null, 1), c_unitCountAll) > 0){
+				UnitGroupRemove(geysers, u);
+			}
+			else {
+				return UnitGetPosition(u);
+			}
+			UnitGroupRemove(geysers, u);
+		}
+		// DebugAI(IntToString(UnitGroupCount(geysers, c_unitCountAll)));
+		
+		if (UnitGroupCount(ug, c_unitCountAll) > 0) {
+			return UnitGetPosition(UnitGroupUnit(ug, 1));
+		}
+		else { return null; }
+	}
+	else if (building == GTRacialMainBuilding(player)){
+		return GTGetBaseMainBuildingLocation(GTSuggestExpansion(player));
+	}
+	else {
+		cacheString = "GTFindBuildPointCache" + building + "base" + IntToString(base) + "flag" + IntToString(buildFlag);
+		if (GTTableValueExists(player, cacheString)){
+			p = GTTableGetPoint(player, cacheString);
+			timeOfEntry = GTTableGetFixed(player, cacheString + "timeOfEntry");
+			if (GTGameTime() - timeOfEntry <= 10.0 && GTBuildingPlacementIsValid(player, building, p)){
+				GTErrorLog(player, c_GTLog, c_GTProduction, "GTFindBuildPoint: found build point for " + building + " from cache: " + PointToString(p));
+				return p;
+			}
+			else { // cached point is no longer valid
+				GTTableRemove(player, cacheString);
+			}
+		}
+	
+		// if we get to here, means there is no cached point or cached point is no longer valid; so recalculate
+		
+		p = GTFindBuildPointInsideBase(player, base, building);
+		// p = GTFindBuildPointBehindMinerals(player, base, building);
+		if (p != null){
+			GTTableSetPoint(player, cacheString, p);
+			GTTableSetFixed(player, cacheString + "timeOfEntry", GTGameTime());
+			GTErrorLog(player, c_GTLog, c_GTProduction, "GTFindBuildPoint: calculated build point for " + building + " : " + PointToString(p));
+			return p;
+		}
+		GTErrorLog(player, c_GTWarning, c_GTProduction, "GTFindBuildPoint: cannot find build point for " + building);
+	}
+	
+	return null; // (should never get to this stage)
+}
+
+fixed GTEstimateWorkerTravelTime(unit worker, point targetLoc, bool ignoreStructures){
+	fixed conversionFactor;
+	if (targetLoc == null || worker == null){
+		// DebugAI("GTEstimateWorkerTravelTime: null parameters given");
+		// GTErrorLog(UnitGetOwner(worker), c_GTError, c_GTProduction, "GTEstimateWorkerTravelTime: null parameter(s) given"); <-- something wrong
+		return 0.0;
+	}
+	if (ignoreStructures){ conversionFactor = 0.3; }
+	else {conversionFactor = 0.3; }
+	return AIPathingCostUnit(worker, targetLoc, ignoreStructures) * conversionFactor + 1.92;
+}
+
+point GTIncomeOverTime(int player, fixed travelTime, point income){ // x = minerals, y = gas
+	return Point(PointGetX(income) * travelTime, PointGetY(income) * travelTime);
+}
+
+int GTBuildingAddonStatus(unit building){
+// credits to MTops
+	string buildingType = UnitGetType(building);
+	string abilLink;
+	abilcmd addonAbility;
+	
+	// building under construction
+	if (UnitTestState(building, c_unitStateUnderConstruction) == true) {
+		return c_GTAddonBuildingUnderConstruction;
+	}
+	
+	if (buildingType == c_TB_Barracks) { abilLink = "BarracksAddOns"; }
+	else if (buildingType == c_TB_Factory) { abilLink = "FactoryAddOns"; }
+	else if (buildingType == c_TB_Starport) { abilLink = "StarportAddOns"; }
+	else { return c_GTAddonNoAddonInstalled; }
+	
+	addonAbility = AbilityCommand(abilLink, 0);
+	
+	// ability enabled but hidden: building has addon
+	if (UnitCheckAbilCmdState(building, addonAbility, c_cmdStateHidden) == true) {
+		
+		// reactor behavior present: building has reactor
+		if (UnitHasBehavior(building, "ReactorQueue") == true) {
+			return c_GTAddonReactorInstalled;
+		}
+		
+		// current order is building an addon
+		if (UnitOrderHasAbil(building, abilLink) == true) {
+			return c_GTAddonInstalling;
+		}
+		
+		return c_GTAddonTechLabInstalled;
+	}
+	
+	return c_GTAddonNoAddonInstalled;	
+}
+
+unitgroup GTMergeSortByProductionProgress(int player, unitgroup ug){
+// sort unitgroup of buildings/units according to production progress percentage in decreasing order
+
+	unitgroup left = UnitGroupEmpty();
+	unitgroup right = UnitGroupEmpty();
+	int mid;
+	int i = 1;
+    if (UnitGroupCount(ug, c_unitCountAll) <= 1){ return ug; } // if list size is 1, consider it sorted and return it
+	
+	mid = UnitGroupCount(ug, c_unitCountAll) / 2;
+	while (i <= mid){
+		UnitGroupAdd(left, UnitGroupUnit(ug, i));
+		i += 1;
+	}
+	while (i <= UnitGroupCount(ug, c_unitCountAll)){
+		UnitGroupAdd(right, UnitGroupUnit(ug, i));
+		i += 1;
+	}
+	
+	// recursively call GTMergeSortByProductionProgress() to further split each unitgroup until unitgroup size is 1
+    left = GTMergeSortByProductionProgress(player, left);
+    right = GTMergeSortByProductionProgress(player, right);
+	
+    // merge the unitgroup returned from prior calls to GTMergeSortByProductionProgress()
+    // and return the resulting merged unitgroup
+	if (GTGetProductionProgress(UnitGroupUnit(left, 1)) >= GTGetProductionProgress(UnitGroupUnit(right, 1))){ return GTMergeUnitGroupsByProductionProgress(left, right); }
+	else { return GTMergeUnitGroupsByProductionProgress(right, left); }
+	return null;
+}
+
+unitgroup GTMergeUnitGroupsByProductionProgress(unitgroup left, unitgroup right){
+    unitgroup result = UnitGroupEmpty();
+    while (UnitGroupCount(left, c_unitCountAll) > 0 || UnitGroupCount(right, c_unitCountAll) > 0){
+        if (UnitGroupCount(left, c_unitCountAll) > 0 && UnitGroupCount(right, c_unitCountAll) > 0){
+            if (GTGetProductionProgress(UnitGroupUnit(left, 1)) >= GTGetProductionProgress(UnitGroupUnit(right, 1))){
+                // append first(left) to result
+				UnitGroupAdd(result, UnitGroupUnit(left, 1));
+				// left = rest(left)
+				UnitGroupRemove(left, UnitGroupUnit(left, 1));
+			}
+            else {
+                // append first(right) to result
+				UnitGroupAdd(result, UnitGroupUnit(right, 1));
+				// right = rest(right)
+				UnitGroupRemove(right, UnitGroupUnit(right, 1));
+			}
+		}
+        else if (UnitGroupCount(left, c_unitCountAll) > 0){
+            // append first(left) to result
+			UnitGroupAdd(result, UnitGroupUnit(left, 1));
+            // left = rest(left)
+			UnitGroupRemove(left, UnitGroupUnit(left, 1));
+		}
+        else if (UnitGroupCount(right, c_unitCountAll) > 0){
+            // append first(right) to result
+			UnitGroupAdd(result, UnitGroupUnit(right, 1));
+            // right = rest(right)
+			UnitGroupRemove(right, UnitGroupUnit(right, 1));
+		}
+	}
+    return result;
+}
+
+unit GTGetNextAvailableBuilding(int player, string buildingNeeded, unitgroup sortedProd, int addonStatus) {
+	unit building;
+	int i = 1;
+	
+	while (i <= UnitGroupCount(sortedProd, c_unitCountAll)) {
+		building = UnitGroupUnit(sortedProd, i);
+		if (UnitGetType(building) == buildingNeeded && UnitTypeTestAttribute(buildingNeeded, c_unitAttributeStructure)) {
+			if (GTIsBuildingPowered(building) && (addonStatus == c_GTAddonAny || GTBuildingAddonStatus(building) == addonStatus)) {
+				return building;
+			}
+		}
+		else if (UnitGetType(building) == buildingNeeded && !UnitTypeTestAttribute(buildingNeeded, c_unitAttributeStructure)){
+			return building; // could be a larva, zergling or corruptor
+		}
+		i += 1;
+	}
+	return null;
+}
+
+void GTWarpGateTransform(int player){
+// transforms all gateways into warpgates for player
+	unitgroup gates = UnitGroup(c_PB_Gateway, player, null, null, 20); // don't need to do many at a time~
+	unit u;
+	if (GTTechCount(player, c_PR_WarpGateResearch, c_techCountCompleteOnly) < 1){
+		return;
+	}
+	while (UnitGroupCount(gates, c_unitCountAll) > 0){
+		u = UnitGroupUnit(gates, 1);
+		if (UnitTestState(u, c_unitStateUnderConstruction) == false){
+			GTResearchAtBuilding(player, u, c_PB_WarpGate);
+		}
+		UnitGroupRemove(gates, u);
+	}
+}
+
+bool GTIsBuildingPowered(unit u) {
+// credits to MTops
+	if (UnitHasBehavior(u, "PowerUserQueue") || UnitHasBehavior(u, "PowerUserBaseDefenseSmall")) {
+		if (PowerLevel(UnitGetOwner(u), UnitGetPosition(u), "PowerSource") > 0) {
+			return true;
+		}
+		return false;
+	}
+	return true;
+}
+
+int GTGetRequiredAddonStatus(string unitType){
+	if (unitType == c_TU_Marauder || unitType == c_TU_Ghost || unitType == c_TU_Reaper || unitType == c_TU_SiegeTank ||
+		unitType == c_TU_Thor || unitType == c_TU_Raven || unitType == c_TU_Banshee || unitType == c_TU_Battlecruiser) {
+		return c_GTAddonTechLabInstalled;
+	}
+	if (StringFind(unitType, "TechLab", true) > 0 || StringFind(unitType, "Reactor", true) > 0) {
+		return c_GTAddonNoAddonInstalled;
+	}
+	return c_GTAddonAny; // no addon requirement
+}
+
+void GTWarpTrain(int player, unit building, string unitType) { // to do: loc should be better
+	unitgroup pylons = UnitGroup(c_PB_Pylon, player, RegionPlayableMap(), UnitFilterStr("-;UnderConstruction"), 200);
+	point loc = PlayerStartLocation(player);
+	point pos;
+	order ord;
+	point fieldPos;
+	
+	if (unitType == c_PU_Zealot) { ord = AICreateOrder(player, "WarpGateTrain", 0); }
+	else if (unitType == c_PU_Stalker) { ord = AICreateOrder(player, "WarpGateTrain", 1); }
+	else if (unitType == c_PU_Sentry) { ord = AICreateOrder(player, "WarpGateTrain", 5); }
+	else if (unitType == c_PU_HighTemplar) { ord = AICreateOrder(player, "WarpGateTrain", 3); }
+	else if (unitType == c_PU_DarkTemplar) { ord = AICreateOrder(player, "WarpGateTrain", 4); }
+	else {
+		GTErrorLog(player, c_GTError, c_GTProduction, "GTWarpTrain: no support for unit " + unitType);
+	}
+	
+	fieldPos = UnitGetPosition(UnitGroupNearestUnit(pylons, loc));
+	pos = fieldPos;
+	OrderSetTargetPoint(ord, pos);
+	while (UnitOrderIsValid(building, ord) == false) {
+		pos = PointWithOffsetPolar(fieldPos, RandomFixed(3.0, 7.0), RandomFixed(0.0, 360.0));
+		OrderSetTargetPoint(ord, pos);
+	}
+	if (GTUnitIssueOrder(building, ord, c_orderQueueAddToEnd, GTUnitOrderIssueUniqueID())) {
+		GTErrorLog(player, c_GTLog, c_GTProduction, "warping in " + unitType);
+	}
+}
+
+void GTBuildAddonAtBuilding(int player, unit building, string unitToBuild) { // change to return bool?
+	string buildAbility;
+	int buildIndex = 0;
+	order buildOrder;
+	abilcmd cmd;
+	// if base is under attack? perhaps should just ignore
+	if (GTBuildingPlacementIsValid(player, unitToBuild, UnitGetPosition(building) + GTAddonOffsetPoint())){
+		if (unitToBuild == c_TB_BarracksTechLab)		{ buildAbility = "BarracksAddOns"; 					}
+		else if (unitToBuild == c_TB_BarracksReactor)	{ buildAbility = "BarracksAddOns"; buildIndex = 1;	}
+		else if (unitToBuild == c_TB_FactoryTechLab)	{ buildAbility = "FactoryAddOns"; 					}
+		else if (unitToBuild == c_TB_FactoryReactor)	{ buildAbility = "FactoryAddOns"; buildIndex = 1;	}
+		else if (unitToBuild == c_TB_StarportTechLab)	{ buildAbility = "StarportAddOns"; 					}
+		else if (unitToBuild == c_TB_StarportReactor)	{ buildAbility = "StarportAddOns"; buildIndex = 1;	}
+		
+		buildOrder = AICreateOrder(player, buildAbility, buildIndex);
+		if (GTUnitIssueOrder(building, buildOrder, c_orderQueueAddToEnd, GTUnitOrderIssueUniqueID())) {
+			GTUnitSetData(building, c_GTUnitDataUpgradeTime, FixedToInt(GTGameTime()));
+		}
+	}
+	else {
+		DebugAI("GTBuildAddonAtBuilding: addon invalid placement");
+	
+	}
+}
+
+// // string GTPQSQueueItem(string unitType, int countAtOnce, int buildFlag){
+	// // return unitType + " " + IntToString(countAtOnce) + " " + IntToString(buildFlag);
+// // }
+
+point GTFindBuildPointInsideBase(int player, int base, string bType){ // 'normal' placement
+	int choke_i;
+	string race = PlayerRace(player);
+	point chokeCenter;
+	point center = GTPointBaseCenter(base, 0, 0);
+	point p1;
+	point p2;
+	point bLoc = null;
+	fixed d;
+	fixed buildingRadius = UnitTypeGetProperty(bType, c_unitPropRadius);
+	fixed angle;
+	unitgroup ug;
+	unit u;
+	region reg;
+	int i;
+	int j;
+	
+	if (race == "Zerg"){
+		i = 1000;
+		while (i > 0){
+			angle = RandomFixed(0.0, 360.0);
+			d = RandomFixed(1.0, DistanceBetweenPoints(center, GTPointAtEdgePolar(center, angle, 0.0)) * 0.90);
+			p1 = PointWithOffsetPolar(center, d, angle);
+			bLoc = AIPlacementNearbyFindTest(player, p1, buildingRadius * 3.0, bType);
+			if (RegionContainsPoint(reg, bLoc)){
+				bLoc = null;
+			}
+			if (bLoc != null){ return bLoc; }
+			i -= 1;
+		}
+	}
+	else if (race == "Prot"){
+		reg = GTBaseResourceRegion(base);
+		if (bType != c_PB_Nexus && bType != c_PB_Pylon){
+			if (GTTechCount(player, c_PB_Pylon, c_techCountInProgressOrBetter) < 1){ return null; }
+			ug = UnitGroup(c_PB_Pylon, player, RegionPlayableMap(), null, 80); // get all pylons
+			if (GTTechCount(player, c_PB_Pylon, c_techCountCompleteOnly) < 1){ return UnitGetPosition(UnitGroupUnit(ug, 1)); }
+			i = 100;
+			while (i > 0){
+				p1 = UnitGetPosition(UnitGroupRandomUnit(ug, c_unitCountAlive));
+				angle = AngleBetweenPoints(center, p1);
+				if (DistanceBetweenPoints(center, p1) < DistanceBetweenPoints(center, GTPointAtEdgePolar(center, angle, 0.0))){
+					j = 200;
+					while (j > 0){
+						p2 = RegionRandomPoint(RegionCircle(p1, 6.5));
+						bLoc = AIPlacementNearbyFindTest(player, p2, buildingRadius * 3.0, bType);
+						if (RegionContainsPoint(reg, bLoc) || (PointPathingCliffLevel(bLoc) != PointPathingCliffLevel(center))){ bLoc = null; }
+						if (bLoc != null){ return bLoc; }
+						j -= 1;
+					}
+				}
+				i -= 1;
+			}
+		}
+		else {
+			i = 1000;
+			while (i > 0){
+				angle = RandomFixed(0.0, 360.0);
+				d = RandomFixed(1.0, DistanceBetweenPoints(center, GTPointAtEdgePolar(center, angle, 0.0)) * 0.90);
+				p1 = PointWithOffsetPolar(center, d, angle);
+				bLoc = AIPlacementNearbyFindTest(player, p1, buildingRadius * 2.0, bType);
+				if (RegionContainsPoint(reg, bLoc)){
+					bLoc = null;
+				}
+				if (bLoc != null){ return bLoc; }
+				i -= 1;
+			}
+		}
+	
+	}
+	else { // race == "Terr"
+		i = 10;
+		reg = GTBaseResourceRegion(base);
+		if (bType == c_TB_Factory || bType == c_TB_Barracks || bType == c_TB_Starport){
+			while (i > 0 && bLoc == null){
+				// to do: distance away from choke
+				angle = RandomFixed(0.0, 360.0);
+				d = RandomFixed(2.0, DistanceBetweenPoints(center, GTPointAtEdgePolar(center, angle, 0)) * 0.70);
+				p1 = PointWithOffsetPolar(center, d, angle);
+				ug = UnitGroup(c_TB_Factory, player, RegionCircle(p1, 4.0), null, 10);
+				libNtve_gf_AddUnitGroupToUnitGroup(UnitGroup(c_TB_Barracks, player, RegionCircle(p1, 4.0), null, 10), ug);
+				libNtve_gf_AddUnitGroupToUnitGroup(UnitGroup(c_TB_Starport, player, RegionCircle(p1, 4.0), null, 10), ug);
+				
+				while (bLoc == null && UnitGroupCount(ug, c_unitCountAlive) > 0){
+					u = UnitGroupNearestUnit(ug, p1);
+					if (PointPathingCliffLevel(UnitGetPosition(u)) == PointPathingCliffLevel(center) && !RegionContainsPoint(reg, UnitGetPosition(u))){
+						if (GTBuildingPlacementIsValid(player, bType, UnitGetPosition(u) - Point(0.0, 3.0)) && GTBuildingPlacementIsValid(player, c_TB_BarracksReactor, UnitGetPosition(u) - Point(0.0, 3.0) + GTAddonOffsetPoint())){
+							bLoc = AIPlacementNearbyFindTest(player, UnitGetPosition(u) - Point(0.0, 3.0), 1.0, bType);
+						}
+						else if (GTBuildingPlacementIsValid(player, bType, UnitGetPosition(u) + Point(0.0, 3.0)) && GTBuildingPlacementIsValid(player, c_TB_BarracksReactor, UnitGetPosition(u) + Point(0.0, 3.0) + GTAddonOffsetPoint())){
+							bLoc = AIPlacementNearbyFindTest(player, UnitGetPosition(u) + Point(0.0, 3.0), 1.0, bType);
+						}
+						else { bLoc = null; }
+					}
+					UnitGroupRemove(ug, u);
+				}
+				i -= 1;
+			}
+		}
+		
+		if (bLoc != null){ return bLoc; }
+		i = 1000;
+		while (i > 0){
+			angle = RandomFixed(0.0, 360.0);
+			d = RandomFixed(2.0, DistanceBetweenPoints(center, GTPointAtEdgePolar(center, angle, 0.0)) * 0.60);
+			p1 = PointWithOffsetPolar(center, d, angle);
+			bLoc = AIPlacementNearbyFindTest(player, p1, buildingRadius * 2.0, bType);
+			if (RegionContainsPoint(reg, bLoc)){
+				bLoc = null;
+			}
+			else if (AINearbyUnits(player, c_TB_Factory, bLoc, 5.0, 1) || AINearbyUnits(player, c_TB_Barracks, bLoc, 5.0, 1) || AINearbyUnits(player, c_TB_Starport, bLoc, 5.0, 1)){
+				bLoc = null;
+			}
+			else if (bType == c_TB_Factory || bType == c_TB_Barracks || bType == c_TB_Starport){
+				if (!GTBuildingPlacementIsValid(player, c_TB_BarracksReactor, bLoc + GTAddonOffsetPoint())){ bLoc = null; }
+			}
+			if (bLoc != null){ return bLoc; }
+			i -= 1;
+		}
+		// if (bLoc != null){ return bLoc; }
+	}
+	return null;
+}
+
+point GTFindBuildPointBehindMinerals(int player, int base, string building){
+// return a point behind the mineral line, useful for building defenses or perhaps hiding tech buildings
+    point start = GTGetBaseMainBuildingLocation(base);
+    point temp;
+    fixed dist = 0.0;
+    fixed angle1 = 0.0;    // shall become the angle of the resource node at one side
+    fixed angle2 = 0.0;    // shall become the angle of the resource node at the other side
+    fixed anglebetween = 0.0;    // shall become the angle between angle1 and angle2
+    fixed tempangle = anglebetween;
+    unitgroup resnodes = GTUnitGroupMerge(UnitGroup(null, -1, RegionCircle(start, 10.0), UnitFilterStr("HarvestableResource;Armored"), 20), UnitGroup(null, -1, RegionCircle(start, 10.0), UnitFilterStr("RawResource;-"), 20));
+    // nearby mineral patches and gas geysers (resource nodes)
+    
+    int i = UnitGroupCount(resnodes, c_unitCountAll);    // num of resource nodes
+    int j = i;
+    
+    if (!GTTableValueExists(0, "GTPointBehindM" + "-B" + IntToString(base) + "-marked")){
+        GTTableSetBool(0, "GTPointBehindM" + "-B" + IntToString(base) + "-marked", false);
+    }
+    
+    if (!GTTableGetBool(0, "GTPointBehindM" + "-B" + IntToString(base) + "-marked")){    // only run at start of game
+        while (i){    // traverse all combinations of two angles each from the starting position to a mineral patch and det. desired angles
+            j =  UnitGroupCount(resnodes, c_unitCountAll);
+            dist = MaxF(DistanceBetweenPoints(UnitGetPosition(UnitGroupUnit(resnodes, i)), start), dist);
+            // also find the distance of the node farthest from the starting position (buildings must be at leat this far away)
+            while (j){
+                tempangle = anglebetween;
+                anglebetween = MaxF(AngleBetweenAngles(AngleBetweenPoints(start, UnitGetPosition(UnitGroupUnit(resnodes, i))), AngleBetweenPoints(start, UnitGetPosition(UnitGroupUnit(resnodes, j)))), anglebetween);
+                if (anglebetween != tempangle){
+                    angle1 = AngleBetweenPoints(start, UnitGetPosition(UnitGroupUnit(resnodes, i)));
+                    angle2 = AngleBetweenPoints(start, UnitGetPosition(UnitGroupUnit(resnodes, j)));
+                }
+                j -= 1;
+            }
+            i -= 1;
+        }
+
+        //store these angles into the DataTable for further use
+        GTTableSetFixed(0, "GTPointBehindM" + "-B" + IntToString(base) + "angle1", angle1);
+        GTTableSetFixed(0, "GTPointBehindM" + "-B" + IntToString(base) + "angle2", angle2);
+        
+        GTTableSetBool(0, "GTPointBehindM" + "-B" + IntToString(base) + "-marked", true);    // indicates that we have done the prep
+    }
+    
+    angle1 = GTTableGetFixed(0, "GTPointBehindM" + "-B" + IntToString(base) + "angle1");
+    angle2 = GTTableGetFixed(0, "GTPointBehindM" + "-B" + IntToString(base) + "angle2");
+   
+    // let's find a building Point
+    i = 300;
+    while (i){
+        temp = PointWithOffsetPolar(start, dist, RandomFixed(angle1, angle2));
+        temp = AIPlacementNearbyFindTest(player, temp, UnitTypeGetProperty(building, c_unitPropRadius) * 2.0, building);
+        if ((temp != null) && (DistanceBetweenPoints(temp, start) >= dist)){    // distance must be behind minerals
+            return temp;
+        }
+        i -= 1;
+    }
+    return null;
+}
+
+// point GTFindBuildPointAntiAir(int player, int base, string building);
