@@ -39,7 +39,7 @@ int sym_type(const char *);
 
 %token<token>  CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
-%token<token>  ALIGNAS ALIGNOF STATIC_ASSERT
+%token<token>  STATIC_ASSERT
 
 %start program
 
@@ -92,7 +92,6 @@ unary_expression
     | unary_operator cast_expression
     | SIZEOF unary_expression
     | SIZEOF '(' type_name ')'
-    | ALIGNOF '(' type_name ')'
     ;
 
 unary_operator
@@ -213,8 +212,6 @@ declaration_specifiers
     | type_specifier
     | type_qualifier declaration_specifiers
     | type_qualifier
-    | alignment_specifier declaration_specifiers
-    | alignment_specifier
     ;
 
 init_declarator_list
@@ -311,11 +308,6 @@ type_qualifier
     : CONST
     | RESTRICT
     | VOLATILE
-    ;
-
-alignment_specifier
-    : ALIGNAS '(' type_name ')'
-    | ALIGNAS '(' constant_expression ')'
     ;
 
 declarator

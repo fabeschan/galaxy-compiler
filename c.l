@@ -102,8 +102,6 @@ digit [0-9]
 "void"                  { TOKEN(VOID); }
 "volatile"              { TOKEN(VOLATILE); }
 "while"                 { TOKEN(WHILE); }
-"_Alignas"                              { TOKEN(ALIGNAS); }
-"_Alignof"                              { TOKEN(ALIGNOF); }
 "_Bool"                                 { TOKEN(BOOL); }
 "_Static_assert"                        { TOKEN(STATIC_ASSERT); }
 "__func__"                              { TOKEN(FUNC_NAME); }
