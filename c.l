@@ -92,7 +92,6 @@ digit [0-9]
 "restrict"              { TOKEN(RESTRICT); }
 "return"                { TOKEN(RETURN); }
 "short"                 { TOKEN(SHORT); }
-"signed"                { TOKEN(SIGNED); }
 "string"                { TOKEN(STRING); }
 "sizeof"                { TOKEN(SIZEOF); }
 "static"                { TOKEN(STATIC); }
@@ -100,7 +99,6 @@ digit [0-9]
 "switch"                { TOKEN(SWITCH); }
 "typedef"               { TOKEN(TYPEDEF); }
 "union"                 { TOKEN(UNION); }
-"unsigned"              { TOKEN(UNSIGNED); }
 "void"                  { TOKEN(VOID); }
 "volatile"              { TOKEN(VOLATILE); }
 "while"                 { TOKEN(WHILE); }
