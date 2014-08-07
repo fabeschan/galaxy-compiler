@@ -89,7 +89,6 @@ digit [0-9]
 "if"                    { TOKEN(IF); }
 "int"                   { TOKEN(INT); }
 "long"                  { TOKEN(LONG); }
-"restrict"              { TOKEN(RESTRICT); }
 "return"                { TOKEN(RETURN); }
 "short"                 { TOKEN(SHORT); }
 "string"                { TOKEN(STRING); }
@@ -100,7 +99,6 @@ digit [0-9]
 "typedef"               { TOKEN(TYPEDEF); }
 "union"                 { TOKEN(UNION); }
 "void"                  { TOKEN(VOID); }
-"volatile"              { TOKEN(VOLATILE); }
 "while"                 { TOKEN(WHILE); }
 "_Bool"                                 { TOKEN(BOOL); }
 "_Static_assert"                        { TOKEN(STATIC_ASSERT); }

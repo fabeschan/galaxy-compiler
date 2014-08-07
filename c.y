@@ -33,7 +33,7 @@ int sym_type(const char *);
 %token<token>  XOR_ASSIGN OR_ASSIGN
 
 %token<token>  TYPEDEF EXTERN STATIC
-%token<token>  CONST RESTRICT VOLATILE
+%token<token>  CONST
 %token<token>  BOOL CHAR SHORT INT LONG FLOAT FIXED DOUBLE VOID STRING
 %token<token>  STRUCT UNION ENUM ELLIPSIS
 
@@ -306,8 +306,6 @@ enumerator  /* identifiers must be flagged as ENUMERATION_CONSTANT */
 
 type_qualifier
     : CONST
-    | RESTRICT
-    | VOLATILE
     ;
 
 declarator
