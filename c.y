@@ -35,7 +35,6 @@ int sym_type(const char *);
 %token<token>  TYPEDEF EXTERN STATIC
 %token<token>  CONST RESTRICT VOLATILE
 %token<token>  BOOL CHAR SHORT INT LONG FLOAT FIXED DOUBLE VOID STRING
-%token<token>  COMPLEX IMAGINARY 
 %token<token>  STRUCT UNION ENUM ELLIPSIS
 
 %token<token>  CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
@@ -245,8 +244,6 @@ type_specifier
     | DOUBLE
     | STRING
     | BOOL
-    | COMPLEX
-    | IMAGINARY     /* non-mandated extension */
     | atomic_type_specifier
     | struct_or_union_specifier
     | enum_specifier

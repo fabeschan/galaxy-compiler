@@ -106,8 +106,6 @@ digit [0-9]
 "_Alignof"                              { TOKEN(ALIGNOF); }
 "_Atomic"                               { TOKEN(ATOMIC); }
 "_Bool"                                 { TOKEN(BOOL); }
-"_Complex"                              { TOKEN(COMPLEX); }
-"_Imaginary"                            { TOKEN(IMAGINARY); }
 "_Static_assert"                        { TOKEN(STATIC_ASSERT); }
 "__func__"                              { TOKEN(FUNC_NAME); }
 
