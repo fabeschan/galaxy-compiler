@@ -39,7 +39,7 @@ int sym_type(const char *);
 
 %token<token>  CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
-%token<token>  ALIGNAS ALIGNOF ATOMIC STATIC_ASSERT
+%token<token>  ALIGNAS ALIGNOF STATIC_ASSERT
 
 %start program
 
@@ -244,7 +244,6 @@ type_specifier
     | DOUBLE
     | STRING
     | BOOL
-    | atomic_type_specifier
     | struct_or_union_specifier
     | enum_specifier
     | TYPEDEF_NAME      /* after it has been defined as such */
@@ -308,15 +307,10 @@ enumerator  /* identifiers must be flagged as ENUMERATION_CONSTANT */
     | enumeration_constant
     ;
 
-atomic_type_specifier
-    : ATOMIC '(' type_name ')'
-    ;
-
 type_qualifier
     : CONST
     | RESTRICT
     | VOLATILE
-    | ATOMIC
     ;
 
 alignment_specifier
