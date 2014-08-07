@@ -101,7 +101,6 @@ digit [0-9]
 "void"                  { TOKEN(VOID); }
 "while"                 { TOKEN(WHILE); }
 "_Bool"                                 { TOKEN(BOOL); }
-"_Static_assert"                        { TOKEN(STATIC_ASSERT); }
 "__func__"                              { TOKEN(FUNC_NAME); }
 
 {L}{A}*                 { SAVETOKEN(check_type()); }

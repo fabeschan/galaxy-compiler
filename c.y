@@ -39,8 +39,6 @@ int sym_type(const char *);
 
 %token<token>  CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
-%token<token>  STATIC_ASSERT
-
 %start program
 
 %%
@@ -202,7 +200,6 @@ constant_expression
 declaration
     : declaration_specifiers ';'
     | declaration_specifiers init_declarator_list ';'
-    | static_assert_declaration
     ;
 
 declaration_specifiers
@@ -265,7 +262,6 @@ struct_declaration_list
 struct_declaration
     : specifier_qualifier_list ';'  /* for anonymous struct/union */
     | specifier_qualifier_list struct_declarator_list ';'
-    | static_assert_declaration
     ;
 
 specifier_qualifier_list
@@ -424,10 +420,6 @@ designator_list
 designator
     : '[' constant_expression ']'
     | '.' IDENTIFIER
-    ;
-
-static_assert_declaration
-    : STATIC_ASSERT '(' constant_expression ',' STRING_LITERAL ')' ';'
     ;
 
 statement
