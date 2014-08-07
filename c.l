@@ -70,7 +70,6 @@ digit [0-9]
 } { /* return (COMMENT); */ }
 "//".*                  { /* consume //-comment */ }
 
-"auto"                  { TOKEN(AUTO); }
 "break"                 { TOKEN(BREAK); }
 "bool"                  { TOKEN(BOOL); }
 "case"                  { TOKEN(CASE); }
@@ -91,7 +90,6 @@ digit [0-9]
 "inline"                { TOKEN(INLINE); }
 "int"                   { TOKEN(INT); }
 "long"                  { TOKEN(LONG); }
-"register"              { TOKEN(REGISTER); }
 "restrict"              { TOKEN(RESTRICT); }
 "return"                { TOKEN(RETURN); }
 "short"                 { TOKEN(SHORT); }

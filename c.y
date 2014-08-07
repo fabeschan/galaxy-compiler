@@ -32,7 +32,7 @@ int sym_type(const char *);
 %token<token>  SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
 %token<token>  XOR_ASSIGN OR_ASSIGN
 
-%token<token>  TYPEDEF EXTERN STATIC AUTO REGISTER INLINE
+%token<token>  TYPEDEF EXTERN STATIC INLINE
 %token<token>  CONST RESTRICT VOLATILE
 %token<token>  BOOL CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT FIXED DOUBLE VOID STRING
 %token<token>  COMPLEX IMAGINARY 
@@ -235,8 +235,6 @@ storage_class_specifier
     | EXTERN
     | STATIC
     | THREAD_LOCAL
-    | AUTO
-    | REGISTER
     ;
 
 type_specifier
