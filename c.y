@@ -37,7 +37,7 @@ int sym_type(const char *);
 %token<token>  BOOL CHAR SHORT INT LONG FLOAT FIXED DOUBLE VOID STRING
 %token<token>  STRUCT UNION ENUM ELLIPSIS
 
-%token<token>  CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
+%token<token>  IF ELSE WHILE DO FOR CONTINUE BREAK RETURN
 
 %start program
 
@@ -423,18 +423,11 @@ designator
     ;
 
 statement
-    : labeled_statement
-    | compound_statement
+    : compound_statement
     | expression_statement
     | selection_statement
     | iteration_statement
     | jump_statement
-    ;
-
-labeled_statement
-    : IDENTIFIER ':' statement
-    | CASE constant_expression ':' statement
-    | DEFAULT ':' statement
     ;
 
 compound_statement
@@ -460,7 +453,6 @@ expression_statement
 selection_statement
     : IF '(' expression ')' statement ELSE statement
     | IF '(' expression ')' statement
-    | SWITCH '(' expression ')' statement
     ;
 
 iteration_statement
@@ -473,8 +465,7 @@ iteration_statement
     ;
 
 jump_statement
-    : GOTO IDENTIFIER ';'
-    | CONTINUE ';'
+    : CONTINUE ';'
     | BREAK ';'
     | RETURN ';'
     | RETURN expression ';'

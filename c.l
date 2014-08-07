@@ -72,11 +72,9 @@ digit [0-9]
 
 "break"                 { TOKEN(BREAK); }
 "bool"                  { TOKEN(BOOL); }
-"case"                  { TOKEN(CASE); }
 "char"                  { TOKEN(CHAR); }
 "const"                 { TOKEN(CONST); }
 "continue"              { TOKEN(CONTINUE); }
-"default"               { TOKEN(DEFAULT); }
 "do"                    { TOKEN(DO); }
 "double"                { TOKEN(DOUBLE); }
 "else"                  { TOKEN(ELSE); }
@@ -85,7 +83,6 @@ digit [0-9]
 "float"                 { TOKEN(FLOAT); }
 "fixed"                 { TOKEN(FIXED); }
 "for"                   { TOKEN(FOR); }
-"goto"                  { TOKEN(GOTO); }
 "if"                    { TOKEN(IF); }
 "int"                   { TOKEN(INT); }
 "long"                  { TOKEN(LONG); }
@@ -95,7 +92,6 @@ digit [0-9]
 "sizeof"                { TOKEN(SIZEOF); }
 "static"                { TOKEN(STATIC); }
 "struct"                { TOKEN(STRUCT); }
-"switch"                { TOKEN(SWITCH); }
 "typedef"               { TOKEN(TYPEDEF); }
 "union"                 { TOKEN(UNION); }
 "void"                  { TOKEN(VOID); }
