@@ -32,7 +32,7 @@ int sym_type(const char *);
 %token<token>  SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
 %token<token>  XOR_ASSIGN OR_ASSIGN
 
-%token<token>  TYPEDEF EXTERN STATIC INLINE
+%token<token>  TYPEDEF EXTERN STATIC
 %token<token>  CONST RESTRICT VOLATILE
 %token<token>  BOOL CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT FIXED DOUBLE VOID STRING
 %token<token>  COMPLEX IMAGINARY 
@@ -40,7 +40,7 @@ int sym_type(const char *);
 
 %token<token>  CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
-%token<token>  ALIGNAS ALIGNOF ATOMIC NORETURN STATIC_ASSERT THREAD_LOCAL
+%token<token>  ALIGNAS ALIGNOF ATOMIC STATIC_ASSERT THREAD_LOCAL
 
 %start program
 
@@ -214,8 +214,6 @@ declaration_specifiers
     | type_specifier
     | type_qualifier declaration_specifiers
     | type_qualifier
-    | function_specifier declaration_specifiers
-    | function_specifier
     | alignment_specifier declaration_specifiers
     | alignment_specifier
     ;
@@ -325,11 +323,6 @@ type_qualifier
     | RESTRICT
     | VOLATILE
     | ATOMIC
-    ;
-
-function_specifier
-    : INLINE
-    | NORETURN
     ;
 
 alignment_specifier

@@ -87,7 +87,6 @@ digit [0-9]
 "for"                   { TOKEN(FOR); }
 "goto"                  { TOKEN(GOTO); }
 "if"                    { TOKEN(IF); }
-"inline"                { TOKEN(INLINE); }
 "int"                   { TOKEN(INT); }
 "long"                  { TOKEN(LONG); }
 "restrict"              { TOKEN(RESTRICT); }
@@ -111,7 +110,6 @@ digit [0-9]
 "_Bool"                                 { TOKEN(BOOL); }
 "_Complex"                              { TOKEN(COMPLEX); }
 "_Imaginary"                            { TOKEN(IMAGINARY); }
-"_Noreturn"                             { TOKEN(NORETURN); }
 "_Static_assert"                        { TOKEN(STATIC_ASSERT); }
 "_Thread_local"                         { TOKEN(THREAD_LOCAL); }
 "__func__"                              { TOKEN(FUNC_NAME); }
