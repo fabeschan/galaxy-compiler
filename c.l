@@ -111,7 +111,6 @@ digit [0-9]
 "_Complex"                              { TOKEN(COMPLEX); }
 "_Imaginary"                            { TOKEN(IMAGINARY); }
 "_Static_assert"                        { TOKEN(STATIC_ASSERT); }
-"_Thread_local"                         { TOKEN(THREAD_LOCAL); }
 "__func__"                              { TOKEN(FUNC_NAME); }
 
 {L}{A}*                 { SAVETOKEN(check_type()); }

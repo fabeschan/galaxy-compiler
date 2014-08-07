@@ -40,7 +40,7 @@ int sym_type(const char *);
 
 %token<token>  CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
-%token<token>  ALIGNAS ALIGNOF ATOMIC STATIC_ASSERT THREAD_LOCAL
+%token<token>  ALIGNAS ALIGNOF ATOMIC STATIC_ASSERT
 
 %start program
 
@@ -232,7 +232,6 @@ storage_class_specifier
     : TYPEDEF   /* identifiers must be flagged as TYPEDEF_NAME */
     | EXTERN
     | STATIC
-    | THREAD_LOCAL
     ;
 
 type_specifier
