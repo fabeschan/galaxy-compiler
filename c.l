@@ -25,8 +25,8 @@ WS  [ \t\v\n\f]
 
 %{
 #include <iostream>
-#include "c.y.hpp"
 #include "ast.hpp"
+#include "c.y.hpp"
 using namespace std;
 #define YY_DECL extern "C" int yylex()
 
@@ -130,7 +130,6 @@ digit [0-9]
 "<<"                    { TOKEN(LEFT_OP); }
 "++"                    { TOKEN(INC_OP); }
 "--"                    { TOKEN(DEC_OP); }
-"->"                    { TOKEN(PTR_OP); }
 "&&"                    { TOKEN(AND_OP); }
 "||"                    { TOKEN(OR_OP); }
 "<="                    { TOKEN(LE_OP); }

@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include "ast.hpp"
-using namespace std;
 
 // stuff from flex that bison needs to know about:
 extern "C" int yylex();
@@ -13,7 +12,10 @@ extern "C" FILE *yyin;
 extern int linenum; 
 extern char* yytext;
 
+using namespace std;
 vector<string> typedef_table;
+NBlock *programBlock; /* the top level root node of our final AST */
+
 void yyerror(const char *s);
 int sym_type(const char *);
 %}
@@ -22,22 +24,32 @@ int sym_type(const char *);
 %union {
     std::string *str;
     int token;
+    Node *node;
+    NBlock *block;
+    NExpression *expr;
+    NStatement *stmt;
+    NIdentifier *ident;
+    NVariableDeclaration *var_decl;
+    std::vector<NVariableDeclaration*> *varvec;
+    std::vector<NExpression*> *exprvec;
 }
 
 /* Terminal symbols */
-%token<str>  IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME
-%token<str>  TYPEDEF_NAME ENUMERATION_CONSTANT
-%token<token>  PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP SIZEOF
-%token<token>  AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
-%token<token>  SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
-%token<token>  XOR_ASSIGN OR_ASSIGN
+%token<str>     IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME
+%token<str>     TYPEDEF_NAME ENUMERATION_CONSTANT
+%token<token>   INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP SIZEOF
+%token<token>   AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
+%token<token>   SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
+%token<token>   XOR_ASSIGN OR_ASSIGN
 
-%token<token>  TYPEDEF EXTERN STATIC
-%token<token>  CONST
-%token<token>  BOOL CHAR SHORT INT LONG FLOAT FIXED DOUBLE VOID STRING
-%token<token>  STRUCT UNION ENUM ELLIPSIS
+%token<token>   TYPEDEF EXTERN STATIC
+%token<token>   CONST
+%token<token>   BOOL CHAR SHORT INT LONG FLOAT FIXED DOUBLE VOID STRING
+%token<token>   STRUCT UNION ENUM ELLIPSIS
 
-%token<token>  IF ELSE WHILE DO FOR CONTINUE BREAK RETURN
+%token<token>   IF ELSE WHILE DO FOR CONTINUE BREAK RETURN
+
+/* %token<block>   program */
 
 %start program
 
@@ -71,7 +83,6 @@ postfix_expression
     | postfix_expression '(' ')'
     | postfix_expression '(' argument_expression_list ')'
     | postfix_expression '.' IDENTIFIER
-    | postfix_expression PTR_OP IDENTIFIER
     | postfix_expression INC_OP
     | postfix_expression DEC_OP
     | '(' type_name ')' '{' initializer_list '}'
@@ -93,9 +104,7 @@ unary_expression
     ;
 
 unary_operator
-    : '&'
-    | '*'
-    | '+'
+    : '+'
     | '-'
     | '~'
     | '!'
@@ -211,7 +220,7 @@ declaration_specifiers
     | type_qualifier
     ;
 
-init_declarator_list
+init_declarator_list /* ex: int i=4, string s="a", ... */
     : init_declarator
     | init_declarator_list ',' init_declarator
     ;
@@ -305,8 +314,7 @@ type_qualifier
     ;
 
 declarator
-    : pointer direct_declarator
-    | direct_declarator
+    : direct_declarator
     ;
 
 direct_declarator
@@ -326,18 +334,10 @@ direct_declarator
     | direct_declarator '(' identifier_list ')'
     ;
 
-pointer
-    : '*' type_qualifier_list pointer
-    | '*' type_qualifier_list
-    | '*' pointer
-    | '*'
-    ;
-
 type_qualifier_list
     : type_qualifier
     | type_qualifier_list type_qualifier
     ;
-
 
 parameter_type_list
     : parameter_list ',' ELLIPSIS
@@ -366,9 +366,7 @@ type_name
     ;
 
 abstract_declarator
-    : pointer direct_abstract_declarator
-    | pointer
-    | direct_abstract_declarator
+    : direct_abstract_declarator
     ;
 
 direct_abstract_declarator
@@ -472,7 +470,7 @@ jump_statement
     ;
 
 program
-    : translation_unit
+    : translation_unit /* { programBlock = $1; } */
     ;
 
 translation_unit
