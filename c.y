@@ -18,6 +18,20 @@ NBlock *programBlock; /* the top level root node of our final AST */
 
 void yyerror(const char *s);
 int sym_type(const char *);
+
+// class Node;
+//     class NExpression; //<expr> numeric expr <exprvec> call_args
+//         class NInteger;
+//         class NFixed;
+//         class NIdentifier; //<ident> ident
+//         class NMethodCall;
+//         class NBinaryOperator;
+//         class NAssignment;
+//         class NBlock;       //<stmt> program stmts block
+//     class NStatement;   //<stmt> stmt var_decl func_decl
+//         class NExpressionStatement;
+//         class NVariableDeclaration; //<varvec> func_decl_args
+//         class NFunctionDeclaration;
 %}
 
 /* Represents the many different ways we can access our data */
@@ -50,30 +64,46 @@ int sym_type(const char *);
 %token<token>   IF ELSE WHILE CONTINUE BREAK RETURN
 
 /* %token<block>   program */
+%type<token>    unary_operator assignment_operator
+%type<ident>    identifier
+%type<expr>     constant enumeration_constant string
+%type<expr>     primary_expression
+%type<expr>     postfix_expression unary_expression assignment_expression
+%type<expr>     cast_expression multiplicative_expression additive_expression
+%type<expr>     shift_expression relational_expression equality_expression
+%type<expr>     and_expression exclusive_or_expression inclusive_or_expression
+%type<expr>     logical_and_expression logical_or_expression
+%type<expr>     expression conditional_expression constant_expression
+%type<stmt>     statement compound_statement expression_statement
+%type<stmt>     selection_statement iteration_statement jump_statement
 
 %start program
 
 %%
 
+identifier
+    : IDENTIFIER { $$ = new NIdentifier(*$1); delete $1; }
+    ;
+
 primary_expression
-    : IDENTIFIER
+    : identifier
     | constant
     | string
     | '(' expression ')'
     ;
 
 constant
-    : I_CONSTANT        /* includes character_constant */
-    | F_CONSTANT
+    : I_CONSTANT { $$ = new NInteger(atol($1->c_str())); delete $1; } /* includes char_constant */
+    | F_CONSTANT { $$ = new NFixed(atof($1->c_str())); delete $1; }
     | ENUMERATION_CONSTANT  /* after it has been defined as such */
     ;
 
 enumeration_constant        /* before it has been defined as such */
-    : IDENTIFIER
+    : identifier { $$ = new NIdentifier(*$1); delete $1; }
     ;
 
 string
-    : STRING_LITERAL
+    : STRING_LITERAL { cout << $1->c_str() << endl; }
     | FUNC_NAME
     ;
 
@@ -82,7 +112,7 @@ postfix_expression
     | postfix_expression '[' expression ']'
     | postfix_expression '(' ')'
     | postfix_expression '(' argument_expression_list ')'
-    | postfix_expression '.' IDENTIFIER
+    | postfix_expression '.' identifier
     | '(' type_name ')' '{' initializer_list '}'
     | '(' type_name ')' '{' initializer_list ',' '}'
     ;
@@ -175,6 +205,7 @@ conditional_expression
 assignment_expression
     : conditional_expression
     | unary_expression assignment_operator assignment_expression
+        { $$ = new NBinaryOperator(*$1, $2, *$3); }
     ;
 
 assignment_operator
@@ -244,8 +275,8 @@ type_specifier
 
 struct_or_union_specifier
     : struct_or_union '{' struct_declaration_list '}'
-    | struct_or_union IDENTIFIER '{' struct_declaration_list '}'
-    | struct_or_union IDENTIFIER
+    | struct_or_union identifier '{' struct_declaration_list '}'
+    | struct_or_union identifier
     ;
 
 struct_or_union
@@ -284,9 +315,9 @@ struct_declarator
 enum_specifier
     : ENUM '{' enumerator_list '}'
     | ENUM '{' enumerator_list ',' '}'
-    | ENUM IDENTIFIER '{' enumerator_list '}'
-    | ENUM IDENTIFIER '{' enumerator_list ',' '}'
-    | ENUM IDENTIFIER
+    | ENUM identifier '{' enumerator_list '}'
+    | ENUM identifier '{' enumerator_list ',' '}'
+    | ENUM identifier
     ;
 
 enumerator_list
@@ -308,7 +339,7 @@ declarator
     ;
 
 direct_declarator
-    : IDENTIFIER
+    : identifier /* { $$ = new NIdentifier(*$1); delete $1; } */
     | '(' declarator ')'
     | direct_declarator '[' ']'
     | direct_declarator '[' '*' ']'
@@ -345,8 +376,8 @@ parameter_declaration
     ;
 
 identifier_list
-    : IDENTIFIER
-    | identifier_list ',' IDENTIFIER
+    : identifier
+    | identifier_list ',' identifier
     ;
 
 type_name
@@ -406,7 +437,7 @@ designator_list
 
 designator
     : '[' constant_expression ']'
-    | '.' IDENTIFIER
+    | '.' identifier
     ;
 
 statement
