@@ -37,7 +37,7 @@ int sym_type(const char *);
 /* Terminal symbols */
 %token<str>     IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME
 %token<str>     TYPEDEF_NAME ENUMERATION_CONSTANT
-%token<token>   INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP SIZEOF
+%token<token>   INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token<token>   AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
 %token<token>   SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
 %token<token>   XOR_ASSIGN OR_ASSIGN
@@ -47,7 +47,7 @@ int sym_type(const char *);
 %token<token>   BOOL CHAR SHORT INT LONG FLOAT FIXED DOUBLE VOID STRING
 %token<token>   STRUCT UNION ENUM ELLIPSIS
 
-%token<token>   IF ELSE WHILE DO FOR CONTINUE BREAK RETURN
+%token<token>   IF ELSE WHILE CONTINUE BREAK RETURN
 
 /* %token<block>   program */
 
@@ -99,8 +99,6 @@ unary_expression
     | INC_OP unary_expression
     | DEC_OP unary_expression
     | unary_operator cast_expression
-    | SIZEOF unary_expression
-    | SIZEOF '(' type_name ')'
     ;
 
 unary_operator
@@ -455,11 +453,6 @@ selection_statement
 
 iteration_statement
     : WHILE '(' expression ')' statement
-    | DO statement WHILE '(' expression ')' ';'
-    | FOR '(' expression_statement expression_statement ')' statement
-    | FOR '(' expression_statement expression_statement expression ')' statement
-    | FOR '(' declaration expression_statement ')' statement
-    | FOR '(' declaration expression_statement expression ')' statement
     ;
 
 jump_statement
