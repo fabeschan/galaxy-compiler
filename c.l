@@ -75,11 +75,9 @@ digit [0-9]
 "char"                  { TOKEN(CHAR); }
 "const"                 { TOKEN(CONST); }
 "continue"              { TOKEN(CONTINUE); }
-"double"                { TOKEN(DOUBLE); }
 "else"                  { TOKEN(ELSE); }
 "enum"                  { TOKEN(ENUM); }
 "extern"                { TOKEN(EXTERN); }
-"float"                 { TOKEN(FLOAT); }
 "fixed"                 { TOKEN(FIXED); }
 "if"                    { TOKEN(IF); }
 "int"                   { TOKEN(INT); }

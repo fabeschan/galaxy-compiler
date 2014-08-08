@@ -44,7 +44,7 @@ int sym_type(const char *);
 
 %token<token>   TYPEDEF EXTERN STATIC
 %token<token>   CONST
-%token<token>   BOOL CHAR INT FLOAT FIXED DOUBLE VOID STRING
+%token<token>   BOOL CHAR INT FIXED VOID STRING
 %token<token>   STRUCT UNION ENUM
 
 %token<token>   IF ELSE WHILE CONTINUE BREAK RETURN
@@ -234,9 +234,7 @@ type_specifier
     : VOID
     | CHAR
     | INT
-    | FLOAT
     | FIXED
-    | DOUBLE
     | STRING
     | BOOL
     | struct_or_union_specifier
