@@ -44,7 +44,7 @@ int sym_type(const char *);
 
 %token<token>   TYPEDEF EXTERN STATIC
 %token<token>   CONST
-%token<token>   BOOL CHAR SHORT INT LONG FLOAT FIXED DOUBLE VOID STRING
+%token<token>   BOOL CHAR INT FLOAT FIXED DOUBLE VOID STRING
 %token<token>   STRUCT UNION ENUM ELLIPSIS
 
 %token<token>   IF ELSE WHILE CONTINUE BREAK RETURN
@@ -233,9 +233,7 @@ storage_class_specifier
 type_specifier
     : VOID
     | CHAR
-    | SHORT
     | INT
-    | LONG
     | FLOAT
     | FIXED
     | DOUBLE

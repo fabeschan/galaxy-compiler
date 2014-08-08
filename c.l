@@ -83,9 +83,7 @@ digit [0-9]
 "fixed"                 { TOKEN(FIXED); }
 "if"                    { TOKEN(IF); }
 "int"                   { TOKEN(INT); }
-"long"                  { TOKEN(LONG); }
 "return"                { TOKEN(RETURN); }
-"short"                 { TOKEN(SHORT); }
 "string"                { TOKEN(STRING); }
 "static"                { TOKEN(STATIC); }
 "struct"                { TOKEN(STRUCT); }
