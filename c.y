@@ -45,7 +45,7 @@ int sym_type(const char *);
 %token<token>   TYPEDEF EXTERN STATIC
 %token<token>   CONST
 %token<token>   BOOL CHAR INT FLOAT FIXED DOUBLE VOID STRING
-%token<token>   STRUCT UNION ENUM ELLIPSIS
+%token<token>   STRUCT UNION ENUM
 
 %token<token>   IF ELSE WHILE CONTINUE BREAK RETURN
 
@@ -332,8 +332,7 @@ type_qualifier_list
     ;
 
 parameter_type_list
-    : parameter_list ',' ELLIPSIS
-    | parameter_list
+    : parameter_list
     ;
 
 parameter_list

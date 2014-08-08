@@ -110,7 +110,6 @@ digit [0-9]
 
 ({SP}?\"([^"\\\n]|{ES})*\"{WS}*)+   { SAVETOKEN(STRING_LITERAL); }
 
-"..."                   { TOKEN(ELLIPSIS); }
 ">>="                   { TOKEN(RIGHT_ASSIGN); }
 "<<="                   { TOKEN(LEFT_ASSIGN); }
 "+="                    { TOKEN(ADD_ASSIGN); }
