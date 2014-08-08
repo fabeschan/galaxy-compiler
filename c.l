@@ -89,8 +89,6 @@ digit [0-9]
 "union"                 { TOKEN(UNION); }
 "void"                  { TOKEN(VOID); }
 "while"                 { TOKEN(WHILE); }
-"_Bool"                                 { TOKEN(BOOL); }
-"__func__"                              { TOKEN(FUNC_NAME); }
 
 {L}{A}*                 { SAVETOKEN(check_type()); }
 

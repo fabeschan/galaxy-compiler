@@ -49,7 +49,7 @@ int sym_type(const char *);
 }
 
 /* Terminal symbols */
-%token<str>     IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME
+%token<str>     IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL
 %token<str>     TYPEDEF_NAME ENUMERATION_CONSTANT
 %token<token>   LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token<token>   AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
@@ -104,7 +104,6 @@ enumeration_constant        /* before it has been defined as such */
 
 string
     : STRING_LITERAL { cout << $1->c_str() << endl; }
-    | FUNC_NAME
     ;
 
 postfix_expression
