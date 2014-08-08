@@ -4,7 +4,7 @@
 class Node;
     class NExpression; //<expr> numeric expr <exprvec> call_args
         class NInteger;
-        class NDouble;
+        class NFixed;
         class NIdentifier; //<ident> ident
         class NMethodCall;
         class NBinaryOperator;
@@ -30,14 +30,14 @@ class NStatement : public Node { };
 
 class NInteger : public NExpression {
 public:
-    long long value;
-    NInteger(long long value) : value(value) { }
+    int value;
+    NInteger(int value) : value(value) { }
 };
 
-class NDouble : public NExpression {
+class NFixed : public NExpression {
 public:
     double value;
-    NDouble(double value) : value(value) { }
+    NFixed(double value) : value(value) { }
 };
 
 class NIdentifier : public NExpression {
