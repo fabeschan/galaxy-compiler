@@ -37,7 +37,7 @@ int sym_type(const char *);
 /* Terminal symbols */
 %token<str>     IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL FUNC_NAME
 %token<str>     TYPEDEF_NAME ENUMERATION_CONSTANT
-%token<token>   INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
+%token<token>   LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token<token>   AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
 %token<token>   SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
 %token<token>   XOR_ASSIGN OR_ASSIGN
@@ -83,8 +83,6 @@ postfix_expression
     | postfix_expression '(' ')'
     | postfix_expression '(' argument_expression_list ')'
     | postfix_expression '.' IDENTIFIER
-    | postfix_expression INC_OP
-    | postfix_expression DEC_OP
     | '(' type_name ')' '{' initializer_list '}'
     | '(' type_name ')' '{' initializer_list ',' '}'
     ;
@@ -96,8 +94,6 @@ argument_expression_list
 
 unary_expression
     : postfix_expression
-    | INC_OP unary_expression
-    | DEC_OP unary_expression
     | unary_operator cast_expression
     ;
 

@@ -125,8 +125,6 @@ digit [0-9]
 "|="                    { TOKEN(OR_ASSIGN); }
 ">>"                    { TOKEN(RIGHT_OP); }
 "<<"                    { TOKEN(LEFT_OP); }
-"++"                    { TOKEN(INC_OP); }
-"--"                    { TOKEN(DEC_OP); }
 "&&"                    { TOKEN(AND_OP); }
 "||"                    { TOKEN(OR_OP); }
 "<="                    { TOKEN(LE_OP); }
