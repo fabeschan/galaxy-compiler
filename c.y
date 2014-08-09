@@ -34,6 +34,46 @@ int sym_type(const char *);
 //         class NFunctionDeclaration;
 %}
 
+/*
+external:
+    expression (need to rename to expressionlist)
+        : expression
+        | expression ',' expression
+    assignment_expression
+    constant_expression (any expression other than an assignment_expr)
+
+primary_expression
+postfix_expression
+unary_expression (in order of preced)
+    : unary_operator
+
+
+binary_expression (in order of preced):
+    | multiplicative_expression '*' cast_expression
+    | multiplicative_expression '/' cast_expression
+    | multiplicative_expression '%' cast_expression
+    | additive_expression '+' multiplicative_expression
+    | additive_expression '-' multiplicative_expression
+    | shift_expression LEFT_OP additive_expression
+    | shift_expression RIGHT_OP additive_expression
+    | relational_expression '<' shift_expression
+    | relational_expression '>' shift_expression
+    | relational_expression LE_OP shift_expression
+    | relational_expression GE_OP shift_expression
+    | equality_expression EQ_OP relational_expression
+    | equality_expression NE_OP relational_expression
+    | and_expression '&' equality_expression
+    | exclusive_or_expression '^' and_expression
+    | inclusive_or_expression '|' exclusive_or_expression
+    | logical_and_expression AND_OP inclusive_or_expression
+    | logical_or_expression OR_OP logical_and_expression
+    
+assignment_expression: unary_expression assignment_operator assignment_expression
+
+*/
+
+
+
 /* Represents the many different ways we can access our data */
 %union {
     std::string *str;
@@ -73,11 +113,32 @@ int sym_type(const char *);
 %type<expr>     shift_expression relational_expression equality_expression
 %type<expr>     and_expression exclusive_or_expression inclusive_or_expression
 %type<expr>     logical_and_expression logical_or_expression
-%type<expr>     expression conditional_expression constant_expression
+%type<expr>     expression constant_expression
 %type<stmt>     statement compound_statement expression_statement
 %type<stmt>     selection_statement iteration_statement jump_statement
 
 %start program
+
+/* Order of Precedence */
+/* 
+%<left>     ','
+%<right>    assignment_operator
+%<right>    ternary_conditional
+%<left>     AND_OP
+%<left>     OR_OP
+%<left>     AND_OP
+%<left>     '|'
+%<left>     '^'
+%<left>     '&'
+%<left>     EQ_OP NE_OP
+%<left>     '<' '>' LE_OP GE_OP
+%<left>     LEFT_OP RIGHT_OP
+%<left>     '+' '-'
+%<left>     '*' '/' '%'
+%<right>    unary_operator cast_expression
+%<left>     post-fix expr
+
+*/
 
 %%
 
@@ -103,7 +164,7 @@ enumeration_constant        /* before it has been defined as such */
     ;
 
 string
-    : STRING_LITERAL { cout << $1->c_str() << endl; }
+    : STRING_LITERAL { cout << linenum << ": found string: " << $1->c_str() << endl; }
     ;
 
 postfix_expression
@@ -196,13 +257,8 @@ logical_or_expression
     | logical_or_expression OR_OP logical_and_expression
     ;
 
-conditional_expression
-    : logical_or_expression
-    | logical_or_expression '?' expression ':' conditional_expression
-    ;
-
 assignment_expression
-    : conditional_expression
+    : logical_or_expression
     | unary_expression assignment_operator assignment_expression
         { $$ = new NBinaryOperator(*$1, $2, *$3); }
     ;
@@ -227,7 +283,7 @@ expression
     ;
 
 constant_expression
-    : conditional_expression    /* with constraints */
+    : logical_or_expression    /* with constraints */
     ;
 
 declaration
