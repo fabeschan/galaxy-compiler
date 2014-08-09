@@ -97,8 +97,8 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 %token<token>   XOR_ASSIGN OR_ASSIGN
 
 %token<token>   TYPEDEF EXTERN STATIC
-%token<token>   CONST
-%token<token>   BOOL CHAR INT FIXED VOID STRING
+%token<token>   CONST ORDER
+%token<token>   BOOL CHAR INT FIXED UNIT UNITGROUP POINT VOID STRING
 %token<token>   STRUCT UNION ENUM
 
 %token<token>   IF ELSE WHILE CONTINUE BREAK RETURN
@@ -316,6 +316,10 @@ type_specifier
     | FIXED
     | STRING
     | BOOL
+    | UNIT
+    | UNITGROUP
+    | ORDER
+    | POINT
     | struct_or_union_specifier
     | enum_specifier
     | TYPEDEF_NAME      /* after it has been defined as such */
@@ -579,7 +583,7 @@ int main(int argc, char *argv[]) {
 }
 
 void yyerror(const char *s) {
-    printf("%d: parse error: %s %s\n", linenum, s, yytext);
+    printf("%d: parse error: %s %s: \n", linenum, s, yytext);
     // might as well halt now:
     //exit(-1);
 }

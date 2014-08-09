@@ -87,6 +87,10 @@ digit [0-9]
 "struct"                { TOKEN(STRUCT); }
 "typedef"               { TOKEN(TYPEDEF); }
 "union"                 { TOKEN(UNION); }
+"unit"                  { TOKEN(UNIT); }
+"unitgroup"             { TOKEN(UNITGROUP); }
+"point"                 { TOKEN(POINT); }
+"order"                 { TOKEN(ORDER); }
 "void"                  { TOKEN(VOID); }
 "while"                 { TOKEN(WHILE); }
 
