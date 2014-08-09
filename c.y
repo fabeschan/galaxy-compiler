@@ -109,7 +109,7 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 %type<expr>     constant enumeration_constant string
 %type<expr>     primary_expression
 %type<expr>     postfix_expression unary_expression assignment_expression
-%type<expr>     cast_expression multiplicative_expression additive_expression
+%type<expr>     multiplicative_expression additive_expression
 %type<expr>     shift_expression relational_expression equality_expression
 %type<expr>     and_expression exclusive_or_expression inclusive_or_expression
 %type<expr>     logical_and_expression logical_or_expression
@@ -123,8 +123,6 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 /* 
 %<left>     ','
 %<right>    assignment_operator
-%<right>    ternary_conditional
-%<left>     AND_OP
 %<left>     OR_OP
 %<left>     AND_OP
 %<left>     '|'
@@ -135,7 +133,7 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 %<left>     LEFT_OP RIGHT_OP
 %<left>     '+' '-'
 %<left>     '*' '/' '%'
-%<right>    unary_operator cast_expression
+%<right>    unary_operator
 %<left>     post-fix expr
 
 */
@@ -184,7 +182,7 @@ argument_expression_list
 
 unary_expression
     : postfix_expression
-    | unary_operator cast_expression
+    | unary_operator unary_expression
     ;
 
 unary_operator
@@ -194,16 +192,11 @@ unary_operator
     | '!'
     ;
 
-cast_expression
-    : unary_expression
-    | '(' type_name ')' cast_expression
-    ;
-
 multiplicative_expression
-    : cast_expression
-    | multiplicative_expression '*' cast_expression
-    | multiplicative_expression '/' cast_expression
-    | multiplicative_expression '%' cast_expression
+    : unary_expression
+    | multiplicative_expression '*' unary_expression
+    | multiplicative_expression '/' unary_expression
+    | multiplicative_expression '%' unary_expression
     ;
 
 additive_expression
