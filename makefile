@@ -11,11 +11,18 @@ c.y.hpp c.y.cpp: c.y
 out: c.y.cpp c.l.cpp
 	g++ -ll -ly $^ -o $@
 
+case:
+	javac UnitTestCase.java
+	java UnitTestCase test1 test2
+
+et:
+	vim UnitTestCase.java
+
 test1:
-	./out $@
+	./out $@.testcase
 
 test2:
-	./out $@
+	./out $@.testcase
 
 test: test1 test2
 
@@ -31,4 +38,4 @@ e: edit
 em: macvim
 
 clean:
-	rm -rf c.l.cpp c.y.cpp c.y.hpp out
+	rm -rf c.l.cpp c.y.cpp c.y.hpp out UnitTestCase.class

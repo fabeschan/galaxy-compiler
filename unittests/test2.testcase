@@ -3,10 +3,11 @@
 fixed GTGetConstructionProgress(int player, string desired, bool incompleteOnly);
 
 int atos(int a){
+    bool w = a[t[9]];
     return IntToString(a);
 }
 
-const int c_nonola = 777;
+typedef int int_nonola;
 const fixed caca = "asdf";
 struct struuu {
     int m1;

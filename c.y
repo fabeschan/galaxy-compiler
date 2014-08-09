@@ -130,7 +130,7 @@ primary_expression
     ;
 
 constant
-    : I_CONSTANT { foundtoken("integer", $1->c_str()); $$ = new NInteger(atol($1->c_str())); delete $1; } /* includes char_constant */
+    : I_CONSTANT { foundtoken("integer", $1->c_str()); $$ = new NInteger(atol($1->c_str())); delete $1; }
     | F_CONSTANT { foundtoken("fixed", $1->c_str()); $$ = new NFixed(atof($1->c_str())); delete $1; }
     | ENUMERATION_CONSTANT  /* after it has been defined as such */
     ;
@@ -221,7 +221,7 @@ declaration
     ;
 
 declaration_specifiers
-    : storage_class_specifier declaration_specifiers /* { cout << $$ << " " << $1 << " " << $2 << " " << TYPEDEF << endl; } */
+    : storage_class_specifier declaration_specifiers
     | storage_class_specifier
     | type_specifier declaration_specifiers
     | type_specifier
@@ -272,7 +272,7 @@ struct_declaration_list
 
 struct_declaration
     : specifier_qualifier_list ';'  /* for anonymous struct/union */
-    | specifier_qualifier_list struct_declarator_list ';'
+    | specifier_qualifier_list declarator_list ';'
     ;
 
 specifier_qualifier_list
@@ -282,15 +282,9 @@ specifier_qualifier_list
     | type_qualifier
     ;
 
-struct_declarator_list
-    : struct_declarator
-    | struct_declarator_list ',' struct_declarator
-    ;
-
-struct_declarator
-    : ':' constant_expression
-    | declarator ':' constant_expression
-    | declarator
+declarator_list
+    : declarator
+    | declarator_list ',' declarator
     ;
 
 enum_specifier
