@@ -18,6 +18,7 @@ NBlock *programBlock; /* the top level root node of our final AST */
 
 void yyerror(const char *s);
 int sym_type(const char *);
+void foundtoken(const char *s, const char *p);
 
 // class Node;
 //     class NExpression; //<expr> numeric expr <exprvec> call_args
@@ -118,7 +119,7 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 %%
 
 identifier
-    : IDENTIFIER { $$ = new NIdentifier(*$1); delete $1; }
+    : IDENTIFIER { foundtoken("id", $1->c_str()); $$ = new NIdentifier(*$1); delete $1; }
     ;
 
 primary_expression
@@ -129,17 +130,17 @@ primary_expression
     ;
 
 constant
-    : I_CONSTANT { $$ = new NInteger(atol($1->c_str())); delete $1; } /* includes char_constant */
-    | F_CONSTANT { $$ = new NFixed(atof($1->c_str())); delete $1; }
+    : I_CONSTANT { foundtoken("integer", $1->c_str()); $$ = new NInteger(atol($1->c_str())); delete $1; } /* includes char_constant */
+    | F_CONSTANT { foundtoken("fixed", $1->c_str()); $$ = new NFixed(atof($1->c_str())); delete $1; }
     | ENUMERATION_CONSTANT  /* after it has been defined as such */
     ;
 
 enumeration_constant        /* before it has been defined as such */
-    : identifier { $$ = new NIdentifier(*$1); delete $1; }
+    : identifier
     ;
 
 string
-    : STRING_LITERAL { cout << linenum << ": found string: " << $1->c_str() << endl; }
+    : STRING_LITERAL { foundtoken("string", $1->c_str()); }
     ;
 
 postfix_expression
@@ -522,4 +523,8 @@ int sym_type(const char *s){
         if (str == *it) return TYPEDEF_NAME;
     }
     return IDENTIFIER;
+}
+
+void foundtoken(const char *s, const char *p){
+    cout << linenum << ": found " << s << ": " << p << endl;
 }
