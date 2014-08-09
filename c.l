@@ -70,6 +70,7 @@ digit [0-9]
 } { /* return (COMMENT); */ }
 "//".*                  { /* consume //-comment */ }
 
+"abilcmd"               { TOKEN(ABILCMD); }
 "break"                 { TOKEN(BREAK); }
 "bool"                  { TOKEN(BOOL); }
 "char"                  { TOKEN(CHAR); }
@@ -91,6 +92,7 @@ digit [0-9]
 "unitgroup"             { TOKEN(UNITGROUP); }
 "point"                 { TOKEN(POINT); }
 "order"                 { TOKEN(ORDER); }
+"region"                { TOKEN(REGION); }
 "void"                  { TOKEN(VOID); }
 "while"                 { TOKEN(WHILE); }
 

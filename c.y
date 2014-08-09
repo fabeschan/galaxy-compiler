@@ -97,7 +97,7 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 %token<token>   XOR_ASSIGN OR_ASSIGN
 
 %token<token>   TYPEDEF EXTERN STATIC
-%token<token>   CONST ORDER
+%token<token>   CONST ORDER ABILCMD REGION
 %token<token>   BOOL CHAR INT FIXED UNIT UNITGROUP POINT VOID STRING
 %token<token>   STRUCT UNION ENUM
 
@@ -311,6 +311,7 @@ storage_class_specifier
 
 type_specifier
     : VOID
+    | ABILCMD
     | CHAR
     | INT
     | FIXED
@@ -320,6 +321,7 @@ type_specifier
     | UNITGROUP
     | ORDER
     | POINT
+    | REGION
     | struct_or_union_specifier
     | enum_specifier
     | TYPEDEF_NAME      /* after it has been defined as such */
