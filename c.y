@@ -44,29 +44,10 @@ external:
 
 primary_expression
 postfix_expression
-unary_expression (in order of preced)
-    : unary_operator
-
-
-binary_expression (in order of preced):
-    | multiplicative_expression '*' cast_expression
-    | multiplicative_expression '/' cast_expression
-    | multiplicative_expression '%' cast_expression
-    | additive_expression '+' multiplicative_expression
-    | additive_expression '-' multiplicative_expression
-    | shift_expression LEFT_OP additive_expression
-    | shift_expression RIGHT_OP additive_expression
-    | relational_expression '<' shift_expression
-    | relational_expression '>' shift_expression
-    | relational_expression LE_OP shift_expression
-    | relational_expression GE_OP shift_expression
-    | equality_expression EQ_OP relational_expression
-    | equality_expression NE_OP relational_expression
-    | and_expression '&' equality_expression
-    | exclusive_or_expression '^' and_expression
-    | inclusive_or_expression '|' exclusive_or_expression
-    | logical_and_expression AND_OP inclusive_or_expression
-    | logical_or_expression OR_OP logical_and_expression
+unary_expression
+binary_expression:
+    : unary_expression
+    | binary_expression BINARY_OP unary_expression
     
 assignment_expression: unary_expression assignment_operator assignment_expression
 
@@ -107,12 +88,8 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 %type<token>    unary_operator assignment_operator
 %type<ident>    identifier
 %type<expr>     constant enumeration_constant string
-%type<expr>     primary_expression
+%type<expr>     primary_expression binary_expression
 %type<expr>     postfix_expression unary_expression assignment_expression
-%type<expr>     multiplicative_expression additive_expression
-%type<expr>     shift_expression relational_expression equality_expression
-%type<expr>     and_expression exclusive_or_expression inclusive_or_expression
-%type<expr>     logical_and_expression logical_or_expression
 %type<expr>     expression constant_expression
 %type<stmt>     statement compound_statement expression_statement
 %type<stmt>     selection_statement iteration_statement jump_statement
@@ -192,82 +169,40 @@ unary_operator
     | '!'
     ;
 
-multiplicative_expression
+binary_expression
     : unary_expression
-    | multiplicative_expression '*' unary_expression
-    | multiplicative_expression '/' unary_expression
-    | multiplicative_expression '%' unary_expression
-    ;
-
-additive_expression
-    : multiplicative_expression
-    | additive_expression '+' multiplicative_expression
-    | additive_expression '-' multiplicative_expression
-    ;
-
-shift_expression
-    : additive_expression
-    | shift_expression LEFT_OP additive_expression
-    | shift_expression RIGHT_OP additive_expression
-    ;
-
-relational_expression
-    : shift_expression
-    | relational_expression '<' shift_expression
-    | relational_expression '>' shift_expression
-    | relational_expression LE_OP shift_expression
-    | relational_expression GE_OP shift_expression
-    ;
-
-equality_expression
-    : relational_expression
-    | equality_expression EQ_OP relational_expression
-    | equality_expression NE_OP relational_expression
-    ;
-
-and_expression
-    : equality_expression
-    | and_expression '&' equality_expression
-    ;
-
-exclusive_or_expression
-    : and_expression
-    | exclusive_or_expression '^' and_expression
-    ;
-
-inclusive_or_expression
-    : exclusive_or_expression
-    | inclusive_or_expression '|' exclusive_or_expression
-    ;
-
-logical_and_expression
-    : inclusive_or_expression
-    | logical_and_expression AND_OP inclusive_or_expression
-    ;
-
-logical_or_expression
-    : logical_and_expression
-    | logical_or_expression OR_OP logical_and_expression
+    | binary_expression '*' unary_expression
+    | binary_expression '/' unary_expression
+    | binary_expression '%' unary_expression
+    | binary_expression '+' unary_expression
+    | binary_expression '-' unary_expression
+    | binary_expression LEFT_OP unary_expression
+    | binary_expression RIGHT_OP unary_expression
+    | binary_expression '<' unary_expression
+    | binary_expression '>' unary_expression
+    | binary_expression LE_OP unary_expression
+    | binary_expression GE_OP unary_expression
+    | binary_expression EQ_OP unary_expression
+    | binary_expression NE_OP unary_expression
+    | binary_expression '&' unary_expression
+    | binary_expression '^' unary_expression
+    | binary_expression '|' unary_expression
+    | binary_expression AND_OP unary_expression
+    | binary_expression OR_OP unary_expression
     ;
 
 assignment_expression
-    : logical_or_expression
+    : binary_expression
     | unary_expression assignment_operator assignment_expression
         { $$ = new NBinaryOperator(*$1, $2, *$3); }
     ;
 
 assignment_operator
     : '='
-    | MUL_ASSIGN
-    | DIV_ASSIGN
-    | MOD_ASSIGN
-    | ADD_ASSIGN
-    | SUB_ASSIGN
-    | LEFT_ASSIGN
-    | RIGHT_ASSIGN
-    | AND_ASSIGN
-    | XOR_ASSIGN
-    | OR_ASSIGN
+    | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN
+    | ADD_ASSIGN | SUB_ASSIGN
+    | LEFT_ASSIGN | RIGHT_ASSIGN
+    | AND_ASSIGN | XOR_ASSIGN | OR_ASSIGN
     ;
 
 expression
@@ -276,7 +211,7 @@ expression
     ;
 
 constant_expression
-    : logical_or_expression    /* with constraints */
+    : binary_expression    /* with constraints */
     ;
 
 declaration
@@ -305,23 +240,14 @@ init_declarator
 
 storage_class_specifier
     : TYPEDEF   /* identifiers must be flagged as TYPEDEF_NAME */
-    | EXTERN
-    | STATIC
+    | EXTERN | STATIC
     ;
 
 type_specifier
-    : VOID
-    | ABILCMD
-    | CHAR
-    | INT
-    | FIXED
-    | STRING
-    | BOOL
-    | UNIT
-    | UNITGROUP
-    | ORDER
-    | POINT
-    | REGION
+    : VOID | ABILCMD | CHAR
+    | INT | FIXED | STRING
+    | BOOL | UNIT | UNITGROUP
+    | ORDER | POINT | REGION
     | struct_or_union_specifier
     | enum_specifier
     | TYPEDEF_NAME      /* after it has been defined as such */
