@@ -48,10 +48,7 @@ external:
 primary_expression
 postfix_expression
 unary_expression
-binary_expression:
-    : unary_expression
-    | binary_expression BINARY_OP unary_expression
-    
+binary_expression
 assignment_expression: unary_expression assignment_operator assignment_expression
 
 */
@@ -88,7 +85,7 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 %token<token>   IF ELSE WHILE CONTINUE BREAK RETURN
 
 /* %token<block>   program */
-%type<token>    unary_operator assignment_operator
+%type<token>    unary_operator assignment_operator binary_operator
 %type<ident>    identifier
 %type<expr>     constant string
 %type<expr>     primary_expression binary_expression
@@ -167,26 +164,21 @@ unary_operator
     | '!'
     ;
 
+binary_operator
+    : '*' | '/' | '%'
+    | '+' | '-'
+    | LEFT_OP | RIGHT_OP
+    | '<' | '>' | LE_OP | GE_OP
+    | EQ_OP | NE_OP
+    | '&'
+    | '^'
+    | '|'
+    | AND_OP | OR_OP
+    ;
+
 binary_expression
     : unary_expression
-    | binary_expression '*' unary_expression
-    | binary_expression '/' unary_expression
-    | binary_expression '%' unary_expression
-    | binary_expression '+' unary_expression
-    | binary_expression '-' unary_expression
-    | binary_expression LEFT_OP unary_expression
-    | binary_expression RIGHT_OP unary_expression
-    | binary_expression '<' unary_expression
-    | binary_expression '>' unary_expression
-    | binary_expression LE_OP unary_expression
-    | binary_expression GE_OP unary_expression
-    | binary_expression EQ_OP unary_expression
-    | binary_expression NE_OP unary_expression
-    | binary_expression '&' unary_expression
-    | binary_expression '^' unary_expression
-    | binary_expression '|' unary_expression
-    | binary_expression AND_OP unary_expression
-    | binary_expression OR_OP unary_expression
+    | binary_expression binary_operator unary_expression
     ;
 
 assignment_expression
