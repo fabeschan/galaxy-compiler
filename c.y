@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <map>
 #include "ast.hpp"
 
 // stuff from flex that bison needs to know about:
@@ -14,6 +15,7 @@ extern char* yytext;
 
 using namespace std;
 vector<string> typedef_table;
+map<string, int> type_table;
 NBlock *programBlock; /* the top level root node of our final AST */
 
 void yyerror(const char *s);
@@ -72,7 +74,7 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 
 /* Terminal symbols */
 %token<str>     IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL
-%token<str>     TYPEDEF_NAME ENUMERATION_CONSTANT
+%token<str>     TYPEDEF_NAME
 %token<token>   LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token<token>   AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
 %token<token>   SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
@@ -81,14 +83,14 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 %token<token>   TYPEDEF EXTERN STATIC
 %token<token>   CONST ORDER ABILCMD REGION
 %token<token>   BOOL CHAR INT FIXED UNIT UNITGROUP POINT VOID STRING
-%token<token>   STRUCT UNION ENUM
+%token<token>   STRUCT UNION
 
 %token<token>   IF ELSE WHILE CONTINUE BREAK RETURN
 
 /* %token<block>   program */
 %type<token>    unary_operator assignment_operator
 %type<ident>    identifier
-%type<expr>     constant enumeration_constant string
+%type<expr>     constant string
 %type<expr>     primary_expression binary_expression
 %type<expr>     postfix_expression unary_expression assignment_expression
 %type<expr>     expression constant_expression
@@ -132,11 +134,6 @@ primary_expression
 constant
     : I_CONSTANT { foundtoken("integer", $1->c_str()); $$ = new NInteger(atol($1->c_str())); delete $1; }
     | F_CONSTANT { foundtoken("fixed", $1->c_str()); $$ = new NFixed(atof($1->c_str())); delete $1; }
-    | ENUMERATION_CONSTANT  /* after it has been defined as such */
-    ;
-
-enumeration_constant        /* before it has been defined as such */
-    : identifier
     ;
 
 string
@@ -250,7 +247,6 @@ type_specifier
     | BOOL | UNIT | UNITGROUP
     | ORDER | POINT | REGION
     | struct_or_union_specifier
-    | enum_specifier
     | TYPEDEF_NAME      /* after it has been defined as such */
     ;
 
@@ -285,24 +281,6 @@ specifier_qualifier_list
 declarator_list
     : declarator
     | declarator_list ',' declarator
-    ;
-
-enum_specifier
-    : ENUM '{' enumerator_list '}'
-    | ENUM '{' enumerator_list ',' '}'
-    | ENUM identifier '{' enumerator_list '}'
-    | ENUM identifier '{' enumerator_list ',' '}'
-    | ENUM identifier
-    ;
-
-enumerator_list
-    : enumerator
-    | enumerator_list ',' enumerator
-    ;
-
-enumerator  /* identifiers must be flagged as ENUMERATION_CONSTANT */
-    : enumeration_constant '=' constant_expression
-    | enumeration_constant
     ;
 
 type_qualifier
@@ -513,9 +491,7 @@ void yyerror(const char *s) {
 
 int sym_type(const char *s){
     string str = string(s);
-    for (vector<string>::iterator it = typedef_table.begin(); it != typedef_table.end(); ++it){
-        if (str == *it) return TYPEDEF_NAME;
-    }
+    if (type_table[str] != 0) return type_table[str];
     return IDENTIFIER;
 }
 

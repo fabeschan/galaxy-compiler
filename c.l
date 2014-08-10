@@ -77,7 +77,6 @@ digit [0-9]
 "const"                 { TOKEN(CONST); }
 "continue"              { TOKEN(CONTINUE); }
 "else"                  { TOKEN(ELSE); }
-"enum"                  { TOKEN(ENUM); }
 "extern"                { TOKEN(EXTERN); }
 "fixed"                 { TOKEN(FIXED); }
 "if"                    { TOKEN(IF); }
@@ -170,8 +169,6 @@ static int check_type(void) {
     {
     case TYPEDEF_NAME:                /* previously defined */
         return TYPEDEF_NAME;
-    case ENUMERATION_CONSTANT:        /* previously defined */
-        return ENUMERATION_CONSTANT;
     default:                          /* includes undefined */
         return IDENTIFIER;
     }

@@ -19,10 +19,10 @@ et:
 	vim UnitTestCase.java
 
 test1:
-	./out $@.testcase
+	./out unittests/$@.testcase
 
 test2:
-	./out $@.testcase
+	./out unittests/$@.testcase
 
 test: test1 test2
 
