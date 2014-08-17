@@ -139,8 +139,6 @@ postfix_expression
     | postfix_expression '(' ')' { $$ = new NMethodCall(*$<ident>1); }
     | postfix_expression '(' argument_expression_list ')' { $$ = new NMethodCall(*$<ident>1, *$3); delete $3; }
     | postfix_expression '.' identifier { $$ = new NMemberAccess(*$1, *$3); }
-    | '(' type_name ')' '{' initializer_list '}'
-    | '(' type_name ')' '{' initializer_list ',' '}'
     ;
 
 argument_expression_list
@@ -319,11 +317,6 @@ parameter_declaration
 identifier_list
     : identifier
     | identifier_list ',' identifier
-    ;
-
-type_name
-    : specifier_qualifier_list abstract_declarator
-    | specifier_qualifier_list
     ;
 
 abstract_declarator
