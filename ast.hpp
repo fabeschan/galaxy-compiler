@@ -1,10 +1,12 @@
 #include <iostream>
 #include <vector>
+#include <string>
 
 class Node;
     class NExpression; //<expr> numeric expr <exprvec> call_args
         class NInteger;
         class NFixed;
+        class NString;
         class NIdentifier; //<ident> ident
         class NMethodCall;
         class NBinaryOperator;
@@ -18,6 +20,8 @@ class Node;
 typedef std::vector<NStatement*> StatementList;
 typedef std::vector<NExpression*> ExpressionList;
 typedef std::vector<NVariableDeclaration*> VariableList;
+
+using namespace std;
 
 class Node {
 public:
@@ -38,6 +42,12 @@ class NFixed : public NExpression {
 public:
     double value;
     NFixed(double value) : value(value) { }
+};
+
+class NString : public NExpression {
+public:
+    string value;
+    NString(string value) : value(value) { }
 };
 
 class NIdentifier : public NExpression {

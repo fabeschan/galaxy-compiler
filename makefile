@@ -13,7 +13,7 @@ out: c.y.cpp c.l.cpp
 
 case:
 	javac UnitTestCase.java
-	java UnitTestCase test1 test2
+	java UnitTestCase test1 test2 test3
 
 et:
 	vim UnitTestCase.java

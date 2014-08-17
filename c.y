@@ -53,8 +53,6 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 
 */
 
-
-
 /* Represents the many different ways we can access our data */
 %union {
     std::string *str;
@@ -97,23 +95,20 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 %start program
 
 /* Order of Precedence */
-/* 
-%<left>     ','
-%<right>    assignment_operator
-%<left>     OR_OP
-%<left>     AND_OP
-%<left>     '|'
-%<left>     '^'
-%<left>     '&'
-%<left>     EQ_OP NE_OP
-%<left>     '<' '>' LE_OP GE_OP
-%<left>     LEFT_OP RIGHT_OP
-%<left>     '+' '-'
-%<left>     '*' '/' '%'
-%<right>    unary_operator
-%<left>     post-fix expr
+%left     ','
+%right    '=' MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN XOR_ASSIGN OR_ASSIGN
+%left     OR_OP
+%left     AND_OP
+%left     '|'
+%left     '^'
+%left     '&'
+%left     EQ_OP NE_OP
+%left     '<' '>' LE_OP GE_OP
+%left     LEFT_OP RIGHT_OP
+%left     '+' '-'
+%left     '*' '/' '%'
+/* %right    '+' '-' '~' '!' */
 
-*/
 
 %%
 
@@ -134,7 +129,7 @@ constant
     ;
 
 string
-    : STRING_LITERAL { foundtoken("string", $1->c_str()); }
+    : STRING_LITERAL { foundtoken("string", $1->c_str()); $$ = new NString(*$1); delete $1; }
     ;
 
 postfix_expression
