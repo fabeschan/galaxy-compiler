@@ -91,6 +91,7 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 %type<expr>     expression constant_expression
 %type<stmt>     statement compound_statement expression_statement
 %type<stmt>     selection_statement iteration_statement jump_statement
+%type<exprvec>   argument_expression_list
 
 %start program
 
@@ -134,17 +135,17 @@ string
 
 postfix_expression
     : primary_expression
-    | postfix_expression '[' expression ']'
-    | postfix_expression '(' ')'
-    | postfix_expression '(' argument_expression_list ')'
-    | postfix_expression '.' identifier
+    | postfix_expression '[' expression ']' { $$ = new NSubscript(*$1, *$3); }
+    | postfix_expression '(' ')' { $$ = new NMethodCall(*$<ident>1); }
+    | postfix_expression '(' argument_expression_list ')' { $$ = new NMethodCall(*$<ident>1, *$3); delete $3; }
+    | postfix_expression '.' identifier { $$ = new NMemberAccess(*$1, *$3); }
     | '(' type_name ')' '{' initializer_list '}'
     | '(' type_name ')' '{' initializer_list ',' '}'
     ;
 
 argument_expression_list
-    : assignment_expression
-    | argument_expression_list ',' assignment_expression
+    : assignment_expression { $$ = new ExpressionList(); $$->push_back($1); }
+    | argument_expression_list ',' assignment_expression { $1->push_back($3); }
     ;
 
 unary_expression

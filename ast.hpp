@@ -12,6 +12,8 @@ class Node;
         class NBinaryOperator;
         class NAssignment;
         class NBlock;       //<stmt> program stmts block
+        class NSubscript;
+        class NMemberAccess;
     class NStatement;   //<stmt> stmt var_decl func_decl
         class NExpressionStatement;
         class NVariableDeclaration; //<varvec> func_decl_args
@@ -79,6 +81,22 @@ public:
     NIdentifier& lhs;
     NExpression& rhs;
     NAssignment(NIdentifier& lhs, NExpression& rhs) : 
+        lhs(lhs), rhs(rhs) { }
+};
+
+class NSubscript : public NExpression {
+public:
+    NExpression& lhs;
+    NExpression& rhs;
+    NSubscript(NExpression& lhs, NExpression& rhs) : 
+        lhs(lhs), rhs(rhs) { }
+};
+
+class NMemberAccess : public NExpression {
+public:
+    NExpression& lhs;
+    NIdentifier& rhs;
+    NMemberAccess(NExpression& lhs, NIdentifier& rhs) : 
         lhs(lhs), rhs(rhs) { }
 };
 
