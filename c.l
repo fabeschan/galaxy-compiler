@@ -21,7 +21,7 @@ SP  (u8|u|U|L)
 ES  (\\(['"\?\\abfnrtv]|[0-7]{1,3}|x[a-fA-F0-9]+))
 WS  [ \t\v\n\f]
 
-%x IN_COMMENT
+%x IN_COMMENT IN_INCLUDE
 
 %{
 #include <iostream>
@@ -63,11 +63,11 @@ digit [0-9]
 "/*"              BEGIN(IN_COMMENT);
 }
 <IN_COMMENT>{
-"*/"      BEGIN(INITIAL);
-[^*\n]+   // eat comment in chunks
-"*"       // eat the lone star
-\n        ++linenum;
-} { /* return (COMMENT); */ }
+"*/"                    BEGIN(INITIAL);
+[^*\n]+                 // eat comment in chunks
+"*"                     // eat the lone star
+\n                      ++linenum;
+}                       { /* return (COMMENT); */ }
 "//".*                  { /* consume //-comment */ }
 
 "abilcmd"               { TOKEN(ABILCMD); }
@@ -81,6 +81,13 @@ digit [0-9]
 "fixed"                 { TOKEN(FIXED); }
 "if"                    { TOKEN(IF); }
 "int"                   { TOKEN(INT); }
+<INITIAL>{
+"include"               { BEGIN(IN_INCLUDE); TOKEN(INCLUDE); }
+}
+<IN_INCLUDE>{
+[ \t\v\f]               { /* whitespace separates tokens */ }
+({SP}?\"([^"\\\n]|{ES})*\")+   { BEGIN(INITIAL); SAVETOKEN(STRING_LITERAL); }
+}
 "return"                { TOKEN(RETURN); }
 "string"                { TOKEN(STRING); }
 "static"                { TOKEN(STATIC); }

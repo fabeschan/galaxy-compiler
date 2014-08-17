@@ -75,7 +75,7 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 %token<token>   SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
 %token<token>   XOR_ASSIGN OR_ASSIGN
 
-%token<token>   TYPEDEF EXTERN STATIC
+%token<token>   TYPEDEF EXTERN STATIC INCLUDE
 %token<token>   CONST ORDER ABILCMD REGION
 %token<token>   BOOL CHAR INT FIXED UNIT UNITGROUP POINT VOID STRING
 %token<token>   STRUCT UNION
@@ -433,9 +433,14 @@ translation_unit
     | translation_unit external_declaration
     ;
 
+include_directive
+    : INCLUDE string
+    ;
+
 external_declaration
     : function_definition
     | declaration
+    | include_directive
     ;
 
 function_definition

@@ -24,6 +24,9 @@ test1:
 test2:
 	./out unittests/$@.testcase
 
+test3:
+	./out unittests/$@.testcase
+
 test: test1 test2
 
 vim: c.l c.y

@@ -29,9 +29,9 @@ const int c_GTBuildFlagCreateChoke		= 10;	// (?) tentative
 const int c_GTBuildFlagBallsToTheWalls	= 20;	// (?) tentative (balls to the walls 4 gate?)
 const int c_GTBuildFlagCannonRush		= 30;	// (?) tentative (but might become BOSSLIKE, depending on how good MapAnalysis is)
 
-// include "TriggerLibs/GTMacro"
-// include "TriggerLibs/GTRapidPolling"
-// include "TriggerLibs/GTCommanderScript"
+include "TriggerLibs/GTMacro"
+include "TriggerLibs/GTRapidPolling"
+include "TriggerLibs/GTCommanderScript"
 
 // Function Declarations
 fixed GTGetConstructionProgress(int player, string desired, bool incompleteOnly);
