@@ -13,7 +13,7 @@ out: c.y.cpp c.l.cpp
 
 case:
 	javac UnitTestCase.java
-	java UnitTestCase test1 test2 test3
+	java UnitTestCase test1 test2 test3 test4
 
 et:
 	vim UnitTestCase.java
@@ -25,6 +25,9 @@ test2:
 	./out unittests/$@.testcase
 
 test3:
+	./out unittests/$@.testcase
+
+test4:
 	./out unittests/$@.testcase
 
 test: test1 test2

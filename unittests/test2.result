@@ -25,13 +25,19 @@
 11: found keyword: fixed
 11: found id: caca
 11: found string: "asdf"
-12: found keyword: struct
-12: found id: struuu
-13: found keyword: int
-13: found id: m1
+12: found id: fsfs
+12: found integer: 1234
+12: found id: atos
+12: found integer: 3
+12: found integer: 4
+13: found keyword: struct
+13: found id: struuu
 14: found keyword: int
-14: found id: m2
-15: found keyword: bool
-15: found id: v
+14: found id: m1
+15: found keyword: int
+15: found id: m2
+16: found keyword: bool
+16: found id: v
+17: found id: ola
 
 Parsing complete

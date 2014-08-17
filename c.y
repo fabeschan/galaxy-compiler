@@ -19,7 +19,7 @@ map<string, int> type_table;
 NBlock *programBlock; /* the top level root node of our final AST */
 
 void yyerror(const char *s);
-int sym_type(const char *);
+int sym_type(string);
 void foundtoken(const char *s, const char *p);
 
 // class Node;
@@ -78,19 +78,19 @@ assignment_expression: unary_expression assignment_operator assignment_expressio
 %token<token>   TYPEDEF EXTERN STATIC INCLUDE
 %token<token>   CONST ORDER ABILCMD REGION
 %token<token>   BOOL CHAR INT FIXED UNIT UNITGROUP POINT VOID STRING
-%token<token>   STRUCT UNION
+%token<token>   STRUCT UNION STRUCT_OR_UNION_SPECIFIER
 
 %token<token>   IF ELSE WHILE CONTINUE BREAK RETURN
 
 /* %token<block>   program */
-%type<token>    unary_operator assignment_operator binary_operator
+%type<token>    unary_operator assignment_operator binary_operator type_specifier
 %type<ident>    identifier
 %type<expr>     constant string
 %type<expr>     primary_expression binary_expression
 %type<expr>     postfix_expression unary_expression assignment_expression
 %type<expr>     expression constant_expression
 %type<stmt>     statement compound_statement expression_statement
-%type<stmt>     selection_statement iteration_statement jump_statement
+%type<stmt>     selection_statement iteration_statement jump_statement declaration
 %type<exprvec>   argument_expression_list
 
 %start program
@@ -201,6 +201,8 @@ constant_expression
 declaration
     : declaration_specifiers ';'
     | declaration_specifiers init_declarator_list ';'
+    | TYPEDEF type_specifier identifier ';' /* TODO: change identifier to declarator */
+        { type_table[$3->name] = TYPEDEF_NAME; }
     ;
 
 declaration_specifiers
@@ -223,8 +225,7 @@ init_declarator
     ;
 
 storage_class_specifier
-    : TYPEDEF   /* identifiers must be flagged as TYPEDEF_NAME */
-    | EXTERN | STATIC
+    : EXTERN | STATIC
     ;
 
 type_specifier
@@ -232,7 +233,7 @@ type_specifier
     | INT | FIXED | STRING
     | BOOL | UNIT | UNITGROUP
     | ORDER | POINT | REGION
-    | struct_or_union_specifier
+    | struct_or_union_specifier {$$ = STRUCT_OR_UNION_SPECIFIER; }
     | TYPEDEF_NAME      /* after it has been defined as such */
     ;
 
@@ -475,8 +476,7 @@ void yyerror(const char *s) {
     //exit(-1);
 }
 
-int sym_type(const char *s){
-    string str = string(s);
+int sym_type(string str){
     if (type_table[str] != 0) return type_table[str];
     return IDENTIFIER;
 }

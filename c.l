@@ -31,7 +31,7 @@ using namespace std;
 #define YY_DECL extern "C" int yylex()
 
 extern void yyerror(const char *);  /* prints grammar violation message */
-extern int sym_type(const char *);  /* returns type from symbol table */
+extern int sym_type(string);  /* returns type from symbol table */
 
 //#define sym_type(identifier) IDENTIFIER /* with no symbol table, fake it */
 
@@ -172,7 +172,8 @@ int yywrap(void){       /* called at end of input */
 }
 
 static int check_type(void) {
-    switch (sym_type(yytext))
+    std::string text = std::string(yytext);
+    switch (sym_type(text))
     {
     case TYPEDEF_NAME:                /* previously defined */
         return TYPEDEF_NAME;

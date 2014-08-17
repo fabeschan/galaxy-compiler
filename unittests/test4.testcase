@@ -1,0 +1,551 @@
+// Constants and Globals
+int g_GTUnitUniqueID = 132;
+int g_GTUnitOrderUniqueID = 101;
+int g_GTCustomTypeUniqueID = 200; // must be a multiple of 100
+
+typedef int arrayInt;
+typedef int arrayPoint;
+typedef int listInt;
+typedef int listIntNode;
+
+const string g_Buildings 			= "ProductionBuildings";
+const string g_VisibleEnemyUnits 	= "VisibleEnemyUnits";
+const string g_VisibleEnemyBuildings 	= "VisibleEnemyBuildings";
+const string g_Workers 				= "Workers";
+const string g_ArmyUnits 			= "ArmyUnits";
+
+const int c_GTUnitJobNothing					= 0;
+const int c_GTUnitJobConstructing				= 1;
+const int c_GTUnitJobGasHarvesting				= 2;
+const int c_GTUnitJobMineralHarvesting			= 3;
+
+//unit data indices
+const int c_GTUnitDataID				= 0;
+const int c_GTUnitDataJob				= 1;
+const int c_GTUnitDataAssignedToBase	= 2;
+const int c_GTUnitDataLastAttacked		= 3;
+const int c_GTUnitDataLastDamaged		= 4;
+const int c_GTUnitDataUpgradeTime		= 5;
+const int c_GTUnitDataAssignedWaveID	= 6;
+const int c_GTUnitDataAssignedWRtBID	= 7;
+const int c_GTUnitDataOrderID			= 8;
+const int c_GTUnitDataGeyserID			= 9;
+
+const int c_GTCustomTypeNormal			= 1;
+const int c_GTNodeTypeNormal			= 1;
+
+const string c_GTCustomTypeID		= "gctypeIdStr";
+const string c_GTCustomTypeSize		= "gArraySizeStr";
+const string c_GTCustomTypeCateg	= "gCusTypeCateg";
+
+const int c_GTCustomTypeCategListInt		= 0; // custom type categ must be a multiple of 10
+const int c_GTCustomTypeCategArrayInt		= 10;
+const int c_GTCustomTypeCategListIntNode	= 20;
+const int c_GTCustomTypeCategArrayPoint		= 30;
+
+const int c_GTCustomTypeIDInvalid		= 0;
+const int c_GTCustomTypeCategInvalid	= 0;
+
+const string c_GTArrayType			= "gArrayTypeStr";
+const string c_GTArrayData			= "gArrayDataStr";
+const string c_GTNodeData			= "gListDataStr";
+const string c_GTNodeNext			= "gListNextStr";
+const string c_GTNodePrev			= "gListPrevStr";
+const string c_GTNodeHead			= "gListHeadStr";
+const string c_GTNodeTail			= "gListTailStr";
+
+// Functions From Other Files
+fixed GTGameTime();
+
+// Functions Declarations
+int GTUnitIssueUniqueID();
+int GTUnitOrderIssueUniqueID();
+int GTCustomTypeIssueUniqueID();
+
+arrayInt GTNewArrayInt(int arrayType);
+void GTDeleteArrayInt(arrayInt id);
+int GTArrayIntSize(arrayInt id);
+void GTArrayIntSetElem(arrayInt id, int data, int index);
+void GTArrayIntAddToEnd(arrayInt id, int data);
+int GTArrayIntGetElem(arrayInt id, int index);
+
+arrayPoint GTNewArrayPoint(int arrayType);
+int GTArrayPointSize(arrayPoint id);
+void GTDeleteArrayPoint(arrayPoint id);
+void GTArrayPointSetElem(arrayPoint id, point data, int index);
+void GTArrayPointAddToEnd(arrayPoint id, point data);
+point GTArrayPointGetElem(arrayPoint id, int index);
+
+listInt GTNewListInt(int listType);
+int GTListIntSize(listInt id);
+void GTDeleteListInt(listInt id);
+listIntNode GTNewListIntNode(int nodeType);
+void GTDeleteListIntNode(listIntNode id);
+void GTListIntNodeSetData(listIntNode id, int data);
+int GTListIntNodeGetData(listIntNode id);
+void GTListIntNodeSetNext(listIntNode id, listIntNode nextID);
+listIntNode GTListIntNodeGetNext(listIntNode id);
+void GTListIntNodeSetPrev(listIntNode id, listIntNode prevID);
+listIntNode GTListIntNodeGetPrev(listIntNode id);
+void GTListIntDeleteNodeFromList(listInt id, listIntNode node); // does not delete node from memory -- use GTDeleteListIntNode() for that
+void GTListIntInsertNode(listInt id, listIntNode node, listIntNode newNode);
+listIntNode GTListIntGetHead(listIntNode id);
+listIntNode GTListIntGetTail(listIntNode id);
+void GTListIntAddToFront(listInt id, listIntNode newNode);
+void GTListIntAddToEnd(listInt id, listIntNode newNode);
+listIntNode GTListIntNodeAtIndex(listIntNode id, int index);
+
+
+void GTTableSetCustomDataType(int player, string name, int id);
+int GTTableGetCustomDataType(int player, string name); // all custom data type is actually/must be an int
+
+void GTTableSetPoint(int player, string name, point val);
+point GTTableGetPoint(int player, string name);
+void GTTableSetUnit(int player, string name, unit val);
+unit GTTableGetUnit(int player, string name);
+void GTTableSetUnitGroup(int player, string name, unitgroup val);
+unitgroup GTTableGetUnitGroup(int player, string name);
+void GTTableSetInt(int player, string name, int val);
+int GTTableGetInt(int player, string name);
+void GTTableSetFixed(int player, string name, fixed val);
+fixed GTTableGetFixed(int player, string name);
+void GTTableSetOrder(int player, string name, order val);
+order GTTableGetOrder(int player, string name);
+void GTTableSetBool(int player, string name, bool val);
+bool GTTableGetBool(int player, string name);
+void GTFcnSetDelay(int player, string fcnName);
+bool GTFcnIsDelay(int player, string fcnName, fixed time);
+void GTTableSetString(int player, string name, string val);
+string GTTableGetString(int player, string name);
+bool GTTableValueExists(int player, string name);
+void GTUnitSetData(unit u, int index, int data);
+int GTUnitGetData(unit u, int index);
+region GTTableGetRegion(int player, string name);
+void GTTableSetRegion(int player, string name, region val);
+void GTTableRemove(int player, string name);
+
+
+// Function Implementations
+int GTUnitIssueUniqueID(){
+	g_GTUnitUniqueID += 1;
+	return g_GTUnitUniqueID;
+}
+
+int GTUnitOrderIssueUniqueID(){
+	g_GTUnitOrderUniqueID += 1;
+	return g_GTUnitOrderUniqueID;
+}
+
+int GTCustomTypeIssueUniqueID(){
+	g_GTCustomTypeUniqueID += 100; // this is the base ID. actual ID is baseID + c_GTCustomTypeCateg + implementationType
+	return g_GTCustomTypeUniqueID;
+}
+
+// Point
+void GTTableSetPoint(int player, string name, point val){
+	DataTableSetPoint(true, IntToString(player) + name, val);
+	return;
+}
+point GTTableGetPoint(int player, string name){
+	return DataTableGetPoint(true, IntToString(player) + name);
+}
+
+
+// Unit 
+void GTTableSetUnit(int player, string name, unit val){
+	DataTableSetUnit(true, IntToString(player) + name, val);
+	return;
+}
+unit GTTableGetUnit(int player, string name){
+	return DataTableGetUnit(true, IntToString(player) + name);
+}
+
+// UnitGroup
+void GTTableSetUnitGroup(int player, string name, unitgroup val){
+	DataTableSetUnitGroup(true, IntToString(player) + name, val);
+	return;
+}
+unitgroup GTTableGetUnitGroup(int player, string name){
+	return DataTableGetUnitGroup(true, IntToString(player) + name);
+}
+
+// Int
+void GTTableSetInt(int player, string name, int val){
+	DataTableSetInt(true, IntToString(player) + name, val);
+	return;
+}
+int GTTableGetInt(int player, string name){
+	return DataTableGetInt(true, IntToString(player) + name);
+}
+
+// Fixed
+void GTTableSetFixed(int player, string name, fixed val){
+	DataTableSetFixed(true, IntToString(player) + name, val);
+	return;
+}
+fixed GTTableGetFixed(int player, string name){
+	return DataTableGetFixed(true, IntToString(player) + name);
+}
+
+// Order
+void GTTableSetOrder(int player, string name, order val){
+	DataTableSetOrder(true, IntToString(player) + name, val);
+	return;
+}
+
+order GTTableGetOrder(int player, string name){
+	return DataTableGetOrder(true, IntToString(player) + name);
+}
+
+// Bool
+void GTTableSetBool(int player, string name, bool val){
+	DataTableSetBool(true, IntToString(player) + name, val);
+	return;
+}
+bool GTTableGetBool(int player, string name) {
+	return DataTableGetBool(true, IntToString(player) + name);
+}
+
+// String
+void GTTableSetString(int player, string name, string val){
+	DataTableSetString(true, IntToString(player) + name, val);
+	return;
+}
+string GTTableGetString(int player, string name){
+	return DataTableGetString(true, IntToString(player) + name);
+}
+
+// Sets up the Delaytimer Function Calls
+void GTFcnSetDelay(int player, string fcnName){
+    GTTableSetFixed(player, fcnName + "time", GTGameTime());
+    return;
+}
+
+// check the Delaytimer
+bool GTFcnIsDelay(int player, string fcnName, fixed time){
+    if ((GTGameTime() - DataTableGetFixed(true, IntToString(player) + fcnName + "time")) > time){
+        return false;
+    }
+    return true;
+}
+
+// check if value exists
+bool GTTableValueExists(int player, string name){
+	return DataTableValueExists(true, IntToString(player) + name);
+}
+
+// unit data
+void GTUnitSetData(unit u, int index, int data){
+	UnitSetCustomValue(u, index, IntToFixed(data));
+}
+
+int GTUnitGetData(unit u, int index){
+	return FixedToInt(UnitGetCustomValue(u, index));
+}
+
+// region data
+region GTTableGetRegion(int player, string name){
+	return DataTableGetRegion(true, IntToString(player) + name);
+}
+
+void GTTableSetRegion(int player, string name, region val){
+	DataTableSetRegion(true, IntToString(player) + name, val);
+}
+
+// remove from data table
+void GTTableRemove(int player, string name){
+	DataTableValueRemove(true, IntToString(player) + name);
+}
+
+// custom data type id getters and setters (dataTable)
+void GTTableSetCustomDataType(int player, string name, int id){
+	GTTableSetInt(player, "gtCusDT" + name, id);
+}
+
+int GTTableGetCustomDataType(int player, string name){ // all custom data type is actually an int
+	return GTTableGetInt(player, "gtCusDT" + name);
+}
+
+int GTCustomTypeCategory(int id){ // will indicate whether this is a listInt, arrayInt.. etc
+	return ModI(id, 100) / 10;
+}
+
+
+// custom type: array of ints
+arrayInt GTNewArrayInt(int arrayType){
+	int id = GTCustomTypeIssueUniqueID() + c_GTCustomTypeCategArrayInt + arrayType;
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize, 0);
+	return id;
+}
+
+int GTArrayIntSize(arrayInt id){
+	return GTTableGetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize);
+}
+
+void GTDeleteArrayInt(arrayInt id){
+	int size = GTArrayIntSize(id);
+	int i = 0;
+	while (i < size){
+		GTTableRemove(0, c_GTCustomTypeID + IntToString(id) + c_GTArrayData + IntToString(i));
+		i += 1;
+	}
+	GTTableRemove(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize);
+}
+
+void GTArrayIntSetElem(arrayInt id, int data, int index){
+	int size = GTArrayIntSize(id);
+	if (index >= size){
+		GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize, index + 1);
+	}
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTArrayData + IntToString(index), data);
+}
+
+void GTArrayIntAddToEnd(arrayInt id, int data){
+	int size = GTArrayIntSize(id);
+	// if (GTCustomTypeCategory(id) != c_GTCustomTypeCategArrayInt){
+		// GTErrorLog(0, c_GTError, c_GTDebug, "GTArrayIntAddElemToEnd : not arrayInt type specified");
+	// }
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTArrayData + IntToString(size), data);
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize, size + 1);
+}
+
+int GTArrayIntGetElem(arrayInt id, int index){
+	int size = GTArrayIntSize(id);
+	// if (index >= size){
+		// DebugAI("Error (GTArrayIntGetElem): index is >= array size");
+		// return 0;
+	// }
+	return GTTableGetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTArrayData + IntToString(index));
+}
+
+
+// custom type: array of points
+arrayPoint GTNewArrayPoint(int arrayType){
+	int id = GTCustomTypeIssueUniqueID() + c_GTCustomTypeCategArrayPoint + arrayType;
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize, 0);
+	return id;
+}
+
+int GTArrayPointSize(arrayPoint id){
+	return GTTableGetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize);
+}
+
+void GTDeleteArrayPoint(arrayPoint id){
+	int size = GTArrayPointSize(id);
+	int i = 0;
+	while (i < size){
+		GTTableRemove(0, c_GTCustomTypeID + IntToString(id) + c_GTArrayData + IntToString(i));
+		i += 1;
+	}
+	GTTableRemove(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize);
+}
+
+void GTArrayPointSetElem(arrayPoint id, point data, int index){
+	int size = GTArrayPointSize(id);
+	if (index >= size){
+		GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize, index + 1);
+	}
+	GTTableSetPoint(0, c_GTCustomTypeID + IntToString(id) + c_GTArrayData + IntToString(index), data);
+}
+
+void GTArrayPointAddToEnd(arrayPoint id, point data){
+	int size = GTArrayPointSize(id);
+	// if (GTCustomTypeCategory(id) != c_GTCustomTypeCategArrayPoint){
+		// GTErrorLog(0, c_GTError, c_GTDebug, "GTarrayPointAddElemToEnd : not arrayPoint type specified");
+	// }
+	GTTableSetPoint(0, c_GTCustomTypeID + IntToString(id) + c_GTArrayData + IntToString(size), data);
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize, size + 1);
+}
+
+point GTArrayPointGetElem(arrayPoint id, int index){
+	int size = GTArrayPointSize(id);
+	// if (index >= size){
+		// DebugAI("Error (GTarrayPointGetElem): index is >= array size");
+		// return 0;
+	// }
+	return GTTableGetPoint(0, c_GTCustomTypeID + IntToString(id) + c_GTArrayData + IntToString(index));
+}
+
+
+// custom type: doubly linked list of ints (but not circular)
+listInt GTNewListInt(int listType){
+	int id = GTCustomTypeIssueUniqueID() + c_GTCustomTypeCategListInt + listType;
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize, 0);
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeHead, c_GTCustomTypeIDInvalid);
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeTail, c_GTCustomTypeIDInvalid);
+	return id;
+}
+
+int GTListIntSize(listInt id){
+	return GTTableGetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize);
+}
+
+void GTDeleteListInt(listInt id){
+	int size = GTListIntSize(id);
+	int i = 0;
+	listIntNode node = GTTableGetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeHead);
+	listIntNode next;
+	
+	while (i < size){
+		next = GTListIntNodeGetNext(node);
+		GTDeleteListIntNode(node);
+		node = next;
+		i += 1;
+	}
+	GTTableRemove(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize);
+	GTTableRemove(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeHead);
+	GTTableRemove(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeTail);
+}
+
+listIntNode GTNewListIntNode(int nodeType){
+	int id = GTCustomTypeIssueUniqueID() + c_GTCustomTypeCategListIntNode + nodeType;
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize, 1);
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeNext, c_GTCustomTypeIDInvalid);
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodePrev, c_GTCustomTypeIDInvalid);
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeData, 0);
+	return id;
+}
+
+listIntNode GTListIntGetHead(listInt id){
+	return GTTableGetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeHead);
+}
+
+listIntNode GTListIntGetTail(listInt id){
+	return GTTableGetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeTail);
+}
+
+void GTListIntInsertNode(listInt id, listIntNode node, listIntNode newNode){ // inserts newNode before node
+	// newNode.prev := node.prev
+    // newNode.next := node
+    // if node.prev == null
+        // list.firstNode := newNode
+    // else
+        // node.prev.next := newNode
+    // node.prev := newNode
+	int size = GTListIntSize(id);
+	listIntNode prev = GTListIntNodeGetPrev(node);
+	
+	GTListIntNodeSetPrev(newNode, prev);
+	GTListIntNodeSetNext(newNode, node);
+	if (prev == c_GTCustomTypeIDInvalid){ GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeHead, newNode); }
+	else { GTListIntNodeSetNext(prev, newNode); }
+	GTListIntNodeSetPrev(node, newNode);
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize, size + 1);	// increment size
+}
+
+void GTListIntAddToFront(listInt id, listIntNode newNode){
+	// if list.firstNode == null
+		// list.firstNode := newNode
+		// list.lastNode  := newNode
+		// newNode.prev := null
+		// newNode.next := null
+	// else
+		// insertBefore(list, list.firstNode, newNode)
+ 
+	listIntNode headNode = GTListIntGetHead(id);
+	int size = GTListIntSize(id);
+	
+	if (headNode == c_GTCustomTypeIDInvalid){
+		GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeHead, newNode); // update head
+		GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeTail, newNode); // head = tail if new size is 1
+		GTListIntNodeSetNext(newNode, c_GTCustomTypeIDInvalid);
+		GTListIntNodeSetPrev(newNode, c_GTCustomTypeIDInvalid);
+		GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize, size + 1);	// increment size
+	}
+	else {
+		GTListIntInsertNode(id, headNode, newNode);
+	}
+	
+}
+
+void GTListIntAddToEnd(listInt id, listIntNode newNode){
+	// if list.lastNode == null
+		// insertBeginning(list, newNode)
+	// else
+		// insertAfter(list, list.lastNode, newNode)
+		
+	listIntNode tailNode = GTListIntGetTail(id);
+	int size = GTListIntSize(id);
+	
+	if (tailNode == c_GTCustomTypeIDInvalid){
+		GTListIntAddToFront(id, newNode);
+	}
+	else {
+		GTListIntNodeSetPrev(newNode, tailNode);	// newNode.prev := node
+		GTListIntNodeSetNext(newNode, c_GTCustomTypeIDInvalid);	// newNode.next := node.next
+		GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeTail, newNode); // update tail
+		GTListIntNodeSetNext(tailNode, newNode);	// list.lastNode := newNode
+		GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize, size + 1);	// node.next := newNode
+	}
+}
+
+void GTListIntDeleteNodeFromList(listInt id, listIntNode node){ // does not delete node from memory -- use GTDeleteListIntNode() for that
+	// (from wikipedia)
+	// if node.prev == null
+	   // list.firstNode := node.next
+	// else
+	   // node.prev.next := node.next
+	// if node.next == null
+	   // list.lastNode := node.prev
+	// else
+	   // node.next.prev := node.prev
+
+	int size = GTListIntSize(id);
+	listIntNode prev = GTListIntNodeGetPrev(node);
+	listIntNode next = GTListIntNodeGetNext(node);
+	// to do: add field in listIntNode to identify which listInt the node is associated with?
+	if (node == c_GTCustomTypeIDInvalid){
+		return;
+	}
+	if (size == 0){
+		GTErrorLog(0, c_GTError, c_GTDebug, "GTListIntDeleteNodeFromList: list size is already zero to begin with");
+		return;
+	}
+	
+	if (prev == c_GTCustomTypeIDInvalid){ GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeHead, next); }
+	else { GTListIntNodeSetNext(prev, next); }
+	if (next == c_GTCustomTypeIDInvalid){ GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeTail, prev); }
+	else { GTListIntNodeSetPrev(next, prev); }
+	
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize, size - 1);
+}
+
+void GTDeleteListIntNode(listIntNode id){
+	GTTableRemove(0, c_GTCustomTypeID + IntToString(id) + c_GTCustomTypeSize);
+	GTTableRemove(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeData);
+	GTTableRemove(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeNext);
+	GTTableRemove(0, c_GTCustomTypeID + IntToString(id) + c_GTNodePrev);
+}
+
+void GTListIntNodeSetData(listIntNode id, int data){
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeData, data);
+}
+
+int GTListIntNodeGetData(listIntNode id){
+	return GTTableGetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeData);
+}
+
+void GTListIntNodeSetNext(listIntNode id, listIntNode nextID){
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeNext, nextID);
+}
+
+listIntNode GTListIntNodeGetNext(listIntNode id){
+	return GTTableGetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodeNext);
+}
+
+void GTListIntNodeSetPrev(listIntNode id, listIntNode prevID){
+	GTTableSetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodePrev, prevID);
+}
+
+listIntNode GTListIntNodeGetPrev(listIntNode id){
+	return GTTableGetInt(0, c_GTCustomTypeID + IntToString(id) + c_GTNodePrev);
+}
+
+listIntNode GTListIntNodeAtIndex(listIntNode id, int index){
+	listIntNode node = GTListIntGetHead(id);
+	while (index > 0){
+		node = GTListIntNodeGetNext(node);
+		index -= 1;
+	}
+	return node;
+}

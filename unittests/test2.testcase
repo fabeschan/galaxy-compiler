@@ -9,8 +9,10 @@ int atos(int a){
 
 typedef int int_nonola;
 const fixed caca = "asdf";
+int_nonola fsfs = 1234 + atos(3 + -4);
 struct struuu {
     int m1;
     int m2;
     bool v;
+    int_nonola ola;
 };

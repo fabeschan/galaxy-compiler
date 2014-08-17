@@ -32,7 +32,7 @@ class UnitTestCase {
                 String result = builder.toString();
 
                 String text = new Scanner(g).useDelimiter("\\A").next();
-                System.out.printf("Test Case [%s]: %s\n", s, result.equals(text)? "SUCCESS":"FAIL");
+                System.out.printf("Test Case [%s]: %s\n", s, result.equals(text)? "PASS":"FAIL");
             }
             catch (Exception err){ err.printStackTrace(); }
 
