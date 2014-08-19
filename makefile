@@ -35,7 +35,7 @@ test: test1 test2
 vim: c.l c.y
 	vim -p $^
 
-macvim: c.l c.y
+macvim: ast.hpp c.l c.y
 	open -a macvim $^
 
 edit: vim out

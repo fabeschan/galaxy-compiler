@@ -21,18 +21,30 @@ class UnitTestCase {
             }
 
             try {
+                boolean pass = true;
+
+                // Get process output
                 Process p = Runtime.getRuntime().exec("./out " + testcaseName);
                 BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                StringBuilder builder = new StringBuilder();
                 String line = null;
-                while ( (line = br.readLine()) != null) {
-                   builder.append(line);
-                   builder.append(System.getProperty("line.separator"));
-                }
-                String result = builder.toString();
 
-                String text = new Scanner(g).useDelimiter("\\A").next();
-                System.out.printf("Test Case [%s]: %s\n", s, result.equals(text)? "PASS":"FAIL");
+                // Get test result file
+                Scanner scanner = new Scanner(g);
+
+                while ( (line = br.readLine()) != null && scanner.hasNextLine() ) {
+                   String resultLine = scanner.nextLine();
+
+                    if (!resultLine.equals(line)) {
+                        System.out.printf("Test Case [%s]: result mismatch:\n", s);
+                        System.out.printf("   [testcase]: %s\n", line);
+                        System.out.printf("   [results] : %s\n", resultLine);
+                        pass = false;
+                        break;
+                    }
+                }
+                System.out.printf("Test Case [%s]: %s\n", s, pass ? "PASS":"FAIL");
+
+                scanner.close();
             }
             catch (Exception err){ err.printStackTrace(); }
 

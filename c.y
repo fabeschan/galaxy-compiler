@@ -31,6 +31,8 @@ void foundtoken(const char *s, const char *p);
 //         class NBinaryOperator;
 //         class NAssignment;
 //         class NBlock;       //<stmt> program stmts block
+//         class NSubscript;
+//         class NMemberAccess;
 //     class NStatement;   //<stmt> stmt var_decl func_decl
 //         class NExpressionStatement;
 //         class NVariableDeclaration; //<varvec> func_decl_args
@@ -201,7 +203,7 @@ constant_expression
 declaration
     : declaration_specifiers ';'
     | declaration_specifiers init_declarator_list ';'
-    | TYPEDEF type_specifier identifier ';' /* TODO: change identifier to declarator */
+    | TYPEDEF type_specifier identifier ';' /* this is just a simple hack */
         { type_table[$3->name] = TYPEDEF_NAME; }
     ;
 
