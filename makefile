@@ -1,4 +1,4 @@
-.PHONY: all test test1 test2 clean
+.PHONY: all test clean
 
 all: out
 
@@ -11,26 +11,26 @@ c.y.hpp c.y.cpp: c.y
 out: c.y.cpp c.l.cpp
 	g++ -ll -ly $^ -o $@
 
-case:
+case: out
 	javac UnitTestCase.java
 	java UnitTestCase test1 test2 test3 test4
 
 et:
 	vim UnitTestCase.java
 
-test1:
+test1: out
 	./out unittests/$@.testcase
 
-test2:
+test2: out
 	./out unittests/$@.testcase
 
-test3:
+test3: out
 	./out unittests/$@.testcase
 
-test4:
+test4: out
 	./out unittests/$@.testcase
 
-test: test1 test2
+test: test1 test2 test3 test4
 
 vim: c.l c.y
 	vim -p $^
