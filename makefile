@@ -11,8 +11,10 @@ c.y.hpp c.y.cpp: c.y
 out: c.y.cpp c.l.cpp
 	g++ -ll -ly $^ -o $@
 
-case: out
+UnitTestCase.class:
 	javac UnitTestCase.java
+
+case: out UnitTestCase.class
 	java UnitTestCase test1 test2 test3 test4
 
 et:

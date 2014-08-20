@@ -249,7 +249,7 @@ declarator
     ;
 
 direct_declarator
-    : identifier /* { $$ = new NIdentifier(*$1); delete $1; } */
+    : identifier
     | '(' declarator ')'
     | direct_declarator '[' ']'
     | direct_declarator '[' '*' ']'
