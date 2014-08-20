@@ -392,10 +392,6 @@ jump_statement
     ;
 
 program
-    : translation_unit /* { programBlock = $1; } */
-    ;
-
-translation_unit
     : block_item_list
     ;
 
