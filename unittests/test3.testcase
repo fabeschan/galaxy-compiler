@@ -22,4 +22,11 @@ void main(){
 }
 
 f(a);
-olist.insert(2, 234);
+olist.
+
+insert
+(
+2, 234
+
+)
+;

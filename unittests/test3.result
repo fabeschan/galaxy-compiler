@@ -49,8 +49,8 @@
 24: found id: f
 24: found id: a
 25: found id: olist
-25: found id: insert
-25: found integer: 2
-25: found integer: 234
+27: found id: insert
+29: found integer: 2
+29: found integer: 234
 
 Parsing complete
