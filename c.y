@@ -21,39 +21,7 @@ NBlock *programBlock; /* the top level root node of our final AST */
 void yyerror(const char *s);
 int sym_type(string);
 void foundtoken(const char *s, const char *p);
-
-// class Node;
-//     class NExpression; //<expr> numeric expr <exprvec> call_args
-//         class NInteger;
-//         class NFixed;
-//         class NIdentifier; //<ident> ident
-//         class NMethodCall;
-//         class NBinaryOperator;
-//         class NAssignment;
-//         class NBlock;       //<stmt> program stmts block
-//         class NSubscript;
-//         class NMemberAccess;
-//     class NStatement;   //<stmt> stmt var_decl func_decl
-//         class NExpressionStatement;
-//         class NVariableDeclaration; //<varvec> func_decl_args
-//         class NFunctionDeclaration;
 %}
-
-/*
-external:
-    expression (need to rename to expressionlist)
-        : expression
-        | expression ',' expression
-    assignment_expression
-    constant_expression (any expression other than an assignment_expr)
-
-primary_expression
-postfix_expression
-unary_expression
-binary_expression
-assignment_expression: unary_expression assignment_operator assignment_expression
-
-*/
 
 /* Represents the many different ways we can access our data */
 %union {
@@ -428,20 +396,12 @@ program
     ;
 
 translation_unit
-/*    : external_declaration
-    | translation_unit external_declaration */
     : block_item_list
     ;
 
 include_directive
     : INCLUDE string
     ;
-
-/* external_declaration
-    : function_definition
-    | declaration
-    | include_directive
-    ; */
 
 function_definition
     : declaration_specifiers declarator declaration_list compound_statement
