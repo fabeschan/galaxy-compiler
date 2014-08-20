@@ -11,3 +11,15 @@ int f(int s){
     int c = -s - s;
     return b == -c + -s - -c;
 }
+
+typedef int listInt;
+listInt olist;
+void insert(listInt id, int index, int value);
+
+void main(){
+    f(a);
+    olist.insert(2, 234);
+}
+
+f(a);
+olist.insert(2, 234);

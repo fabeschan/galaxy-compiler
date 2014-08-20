@@ -396,8 +396,10 @@ block_item_list
     ;
 
 block_item
-    : declaration
+    : function_definition
+    | declaration
     | statement
+    | include_directive
     ;
 
 expression_statement
@@ -426,19 +428,20 @@ program
     ;
 
 translation_unit
-    : external_declaration
-    | translation_unit external_declaration
+/*    : external_declaration
+    | translation_unit external_declaration */
+    : block_item_list
     ;
 
 include_directive
     : INCLUDE string
     ;
 
-external_declaration
+/* external_declaration
     : function_definition
     | declaration
     | include_directive
-    ;
+    ; */
 
 function_definition
     : declaration_specifiers declarator declaration_list compound_statement

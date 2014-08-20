@@ -35,7 +35,7 @@ class UnitTestCase {
                    String resultLine = scanner.nextLine();
 
                     if (!resultLine.equals(line)) {
-                        System.out.printf("Test Case [%s]: result mismatch:\n", s);
+                        System.out.printf("   [%s]: result mismatch:\n", s);
                         System.out.printf("   [testcase]: %s\n", line);
                         System.out.printf("   [results] : %s\n", resultLine);
                         pass = false;

@@ -32,8 +32,7 @@ using namespace std;
 
 extern void yyerror(const char *);  /* prints grammar violation message */
 extern int sym_type(string);  /* returns type from symbol table */
-
-//#define sym_type(identifier) IDENTIFIER /* with no symbol table, fake it */
+extern void foundtoken(const char *s, const char *p);
 
 static void comment(void);
 static int check_type(void);
@@ -41,7 +40,7 @@ static int check_type(void);
 int linenum = 1;
 
 #define TOKEN(t) do { \
-    printf("%d: found keyword: %s\n", linenum, yytext); \
+    foundtoken("keyword", yytext); \
     return (yylval.token = t); \
     } while (0)
 
