@@ -28,6 +28,12 @@ WS  [ \t\v\n\f]
 #include "ast.hpp"
 #include "c.y.hpp"
 using namespace std;
+int yycolumn = 1;
+
+#define YY_USER_ACTION yylloc.first_line = yylloc.last_line = linenum; \
+    yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng - 1; \
+    yycolumn += yyleng;
+
 #define YY_DECL extern "C" int yylex()
 
 extern void yyerror(const char *);  /* prints grammar violation message */
@@ -65,7 +71,7 @@ digit [0-9]
 "*/"                    BEGIN(INITIAL);
 [^*\n]+                 // eat comment in chunks
 "*"                     // eat the lone star
-\n                      ++linenum;
+\n                      { ++linenum; yycolumn = 1; }
 }                       { /* return (COMMENT); */ }
 "//".*                  { /* consume //-comment */ }
 
@@ -161,7 +167,7 @@ digit [0-9]
 "?"                 { return '?'; }
 
 [ \t\v\f]           { /* whitespace separates tokens */ }
-[ \n]               { ++linenum; }
+[ \n]               { ++linenum; yycolumn = 1; }
 .                   { yyterminate(); /* not sure: terminate or skip bad characters */ }
 
 %%

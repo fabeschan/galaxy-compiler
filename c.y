@@ -38,6 +38,8 @@ void foundtoken(const char *s, const char *p);
     std::vector<NExpression*> *exprvec;
 }
 
+%locations
+
 /* Terminal symbols */
 %token<str>     IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL
 %token<str>     TYPEDEF_NAME
