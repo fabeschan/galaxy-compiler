@@ -14,6 +14,7 @@ class Node;
         class NBlock;       //<stmt> program stmts block
         class NSubscript;
         class NMemberAccess;
+        class NIncludeDirective;
     class NStatement;   //<stmt> stmt var_decl func_decl
         class NExpressionStatement;
         class NVariableDeclaration; //<varvec> func_decl_args
@@ -98,6 +99,12 @@ public:
     NIdentifier& rhs;
     NMemberAccess(NExpression& lhs, NIdentifier& rhs) : 
         lhs(lhs), rhs(rhs) { }
+};
+
+class NIncludeDirective : public NExpression {
+public:
+    NString& file;
+    NIncludeDirective(NString& file) : file(file) { }
 };
 
 class NBlock : public NExpression {

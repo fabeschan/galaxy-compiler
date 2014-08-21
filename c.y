@@ -30,6 +30,7 @@ void foundtoken(const char *s, const char *p);
     Node *node;
     NBlock *block;
     NExpression *expr;
+    NString *nstr;
     NStatement *stmt;
     NIdentifier *ident;
     NVariableDeclaration *var_decl;
@@ -52,10 +53,10 @@ void foundtoken(const char *s, const char *p);
 
 %token<token>   IF ELSE WHILE CONTINUE BREAK RETURN
 
-/* %token<block>   program */
+/*%token<block>   block_item_list */
 %type<token>    unary_operator assignment_operator binary_operator type_specifier
 %type<ident>    identifier
-%type<expr>     constant string
+%type<expr>     constant string include_directive
 %type<expr>     primary_expression binary_expression
 %type<expr>     postfix_expression unary_expression assignment_expression
 %type<expr>     expression constant_expression
@@ -359,8 +360,8 @@ compound_statement
     ;
 
 block_item_list
-    : block_item
-    | block_item_list block_item
+    : block_item /*{ $$ = new NBlock(); $$->statements.push_back($<stmt>1); } */
+    | block_item_list block_item /* { $1->statements.push_back($<stmt>2); } */
     ;
 
 block_item
@@ -396,7 +397,7 @@ program
     ;
 
 include_directive
-    : INCLUDE string
+    : INCLUDE string { $$ = new NIncludeDirective(*$<nstr>2); }
     ;
 
 function_definition
