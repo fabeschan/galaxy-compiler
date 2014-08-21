@@ -20,19 +20,10 @@ case: out UnitTestCase.class
 et:
 	vim UnitTestCase.java
 
-test1: out
+test%: out
 	./out unittests/$@.testcase
 
-test2: out
-	./out unittests/$@.testcase
-
-test3: out
-	./out unittests/$@.testcase
-
-test4: out
-	./out unittests/$@.testcase
-
-test: test1 test2 test3 test4
+test: case
 
 vim: c.l c.y
 	vim -p $^

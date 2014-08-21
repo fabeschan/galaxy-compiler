@@ -17,6 +17,7 @@ using namespace std;
 vector<string> typedef_table;
 map<string, int> type_table;
 NBlock *programBlock; /* the top level root node of our final AST */
+int parse_error_count; /* keep track of how many errors there are */
 
 void yyerror(const char *s);
 int sym_type(string);
@@ -39,6 +40,7 @@ void foundtoken(const char *s, const char *p);
 }
 
 %locations
+%error-verbose
 
 /* Terminal symbols */
 %token<str>     IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL
@@ -365,6 +367,7 @@ block_item
 
 expression_statement
     : ';'
+    | error ';'
     | expression_list ';'
     ;
 
@@ -420,12 +423,15 @@ int main(int argc, char *argv[]) {
         printf("\nParsing complete\n");
     else
         printf("\nParsing failed\n");
+
+    cout << "Number of errors: " << parse_error_count << endl;
     fclose(myfile);
     return 0;
 }
 
 void yyerror(const char *s) {
-    printf("%d: parse error: %s %s: \n", linenum, s, yytext);
+    printf("%d: parse error: \"%s\" %s: \n", linenum, yytext, s);
+    parse_error_count++;
     // might as well halt now:
     //exit(-1);
 }
