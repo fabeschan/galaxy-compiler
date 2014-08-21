@@ -119,7 +119,7 @@ argument_expression_list
 
 unary_expression
     : postfix_expression
-    | unary_operator unary_expression
+    | unary_operator unary_expression { $$ = new NUnaryOperator($1, *$2); }
     ;
 
 unary_operator
@@ -143,7 +143,7 @@ binary_operator
 
 binary_expression
     : unary_expression
-    | binary_expression binary_operator unary_expression
+    | binary_expression binary_operator unary_expression { $$ = new NBinaryOperator(*$1, $2, *$3); }
     ;
 
 assignment_expression

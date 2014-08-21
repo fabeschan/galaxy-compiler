@@ -10,6 +10,7 @@ class Node;
         class NIdentifier; //<ident> ident
         class NMethodCall;
         class NBinaryOperator;
+        class NUnaryOperator;
         class NAssignment;
         class NBlock;       //<stmt> program stmts block
         class NSubscript;
@@ -75,6 +76,14 @@ public:
     NExpression& rhs;
     NBinaryOperator(NExpression& lhs, int op, NExpression& rhs) :
         lhs(lhs), rhs(rhs), op(op) { }
+};
+
+class NUnaryOperator : public NExpression {
+public:
+    int op;
+    NExpression& rhs;
+    NUnaryOperator(int op, NExpression& rhs) :
+        rhs(rhs), op(op) { }
 };
 
 class NAssignment : public NExpression {
