@@ -62,7 +62,7 @@ void foundtoken(const char *s, const char *p);
 %type<expr>     expression constant_expression
 %type<stmt>     statement compound_statement expression_statement
 %type<stmt>     selection_statement iteration_statement jump_statement declaration
-%type<exprvec>   argument_expression_list
+%type<exprvec>  argument_expression_list expression_list
 
 %start program
 
@@ -92,7 +92,7 @@ primary_expression
     : identifier
     | constant
     | string
-    | '(' expression ')'
+    | '(' expression_list ')'
     ;
 
 constant
@@ -106,7 +106,7 @@ string
 
 postfix_expression
     : primary_expression
-    | postfix_expression '[' expression ']' { $$ = new NSubscript(*$1, *$3); }
+    | postfix_expression '[' expression_list ']' { $$ = new NSubscript(*$1, *$3); }
     | postfix_expression '(' ')' { $$ = new NMethodCall(*$<ident>1); }
     | postfix_expression '(' argument_expression_list ')' { $$ = new NMethodCall(*$<ident>1, *$3); }
     | postfix_expression '.' identifier { $$ = new NMemberAccess(*$1, *$3); }
@@ -148,8 +148,7 @@ binary_expression
 
 assignment_expression
     : binary_expression
-    | unary_expression assignment_operator assignment_expression
-        { $$ = new NBinaryOperator(*$1, $2, *$3); }
+    | unary_expression assignment_operator assignment_expression { $$ = new NBinaryOperator(*$1, $2, *$3); }
     ;
 
 assignment_operator
@@ -160,9 +159,13 @@ assignment_operator
     | AND_ASSIGN | XOR_ASSIGN | OR_ASSIGN
     ;
 
+expression_list
+    : expression { $$ = new ExpressionList(); $$->push_back($1); }
+    | expression_list ',' expression { $1->push_back($3); }
+    ;
+
 expression
     : assignment_expression
-    | expression ',' assignment_expression
     ;
 
 constant_expression
@@ -373,23 +376,23 @@ block_item
 
 expression_statement
     : ';'
-    | expression ';'
+    | expression_list ';'
     ;
 
 selection_statement
-    : IF '(' expression ')' statement ELSE statement
-    | IF '(' expression ')' statement
+    : IF '(' expression_list ')' statement ELSE statement
+    | IF '(' expression_list ')' statement
     ;
 
 iteration_statement
-    : WHILE '(' expression ')' statement
+    : WHILE '(' expression_list ')' statement
     ;
 
 jump_statement
     : CONTINUE ';'
     | BREAK ';'
     | RETURN ';'
-    | RETURN expression ';'
+    | RETURN expression_list ';'
     ;
 
 program

@@ -97,8 +97,8 @@ public:
 class NSubscript : public NExpression {
 public:
     NExpression& lhs;
-    NExpression& rhs;
-    NSubscript(NExpression& lhs, NExpression& rhs) : 
+    ExpressionList rhs;
+    NSubscript(NExpression& lhs, ExpressionList& rhs) : 
         lhs(lhs), rhs(rhs) { }
 };
 
