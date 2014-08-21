@@ -53,14 +53,14 @@ void foundtoken(const char *s, const char *p);
 
 %token<token>   IF ELSE WHILE CONTINUE BREAK RETURN
 
-/*%token<block>   block_item_list */
+%type<block>    block_item_list compound_statement
 %type<token>    unary_operator assignment_operator binary_operator type_specifier
 %type<ident>    identifier
 %type<expr>     constant string include_directive
 %type<expr>     primary_expression binary_expression
 %type<expr>     postfix_expression unary_expression assignment_expression
 %type<expr>     expression constant_expression
-%type<stmt>     statement compound_statement expression_statement
+%type<stmt>     statement expression_statement
 %type<stmt>     selection_statement iteration_statement jump_statement declaration
 %type<exprvec>  argument_expression_list expression_list
 
@@ -358,13 +358,13 @@ statement
     ;
 
 compound_statement
-    : '{' '}'
-    | '{'  block_item_list '}'
+    : '{' '}' { $$ = new NBlock(); }
+    | '{'  block_item_list '}' { $$ = $2; }
     ;
 
 block_item_list
-    : block_item /*{ $$ = new NBlock(); $$->statements.push_back($<stmt>1); } */
-    | block_item_list block_item /* { $1->statements.push_back($<stmt>2); } */
+    : block_item { $$ = new NBlock(); $$->statements.push_back($<stmt>1); }
+    | block_item_list block_item { $1->statements.push_back($<stmt>2); }
     ;
 
 block_item
@@ -396,7 +396,7 @@ jump_statement
     ;
 
 program
-    : block_item_list
+    : block_item_list { programBlock = $1; }
     ;
 
 include_directive
