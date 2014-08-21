@@ -1,0 +1,28 @@
+// vim: set filetype=cpp:
+
+fixed GTGetConstructionProgress(int player, string desired, bool incompleteOnly);
+
+1 2;
+
+int atos(int a){
+    bool w = a[t[9]];
+    return IntToString(a);
+}
+
+typedef int int_nonola;
+const fixed caca = "asdf";
+int_nonola fsfs = 1234 + atos(3 -4);
+int_nonola ffs = 12 34 + atos(3 4);
+
+struct struct struuu {
+    /* int m1; asdfadsf this is a commment
+
+
+    int m2;
+    bool v;
+    */
+    int_nonola ola;
+};
+
+int string int;
+if ( {) {

@@ -11,7 +11,9 @@ extern "C" int yylex();
 extern "C" int yyparse();
 extern "C" FILE *yyin;
 extern int linenum; 
+extern int yycolumn; 
 extern char* yytext;
+extern std::string char_buffer;
 
 using namespace std;
 vector<string> typedef_table;
@@ -97,6 +99,7 @@ primary_expression
     | constant
     | string
     | '(' expression_list ')'
+    | error
     ;
 
 constant
@@ -367,7 +370,6 @@ block_item
 
 expression_statement
     : ';'
-    | error ';'
     | expression_list ';'
     ;
 
@@ -430,10 +432,15 @@ int main(int argc, char *argv[]) {
 }
 
 void yyerror(const char *s) {
-    printf("%d: parse error: \"%s\" %s: \n", linenum, yytext, s);
+    string linenum_padded = to_string(linenum);
+    linenum_padded.insert(linenum_padded.begin(), 6 - linenum_padded.size(), ' ');
+
+    printf("Error: %s\n", s);
+    printf("%s |%s\n", linenum_padded.c_str(), char_buffer.c_str());
+    string errpad;
+    errpad.insert(errpad.begin(), yycolumn - 2, ' ');
+    printf("...... !%s^\n", errpad.c_str());
     parse_error_count++;
-    // might as well halt now:
-    //exit(-1);
 }
 
 int sym_type(string str){

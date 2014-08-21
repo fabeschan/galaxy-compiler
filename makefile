@@ -15,7 +15,7 @@ UnitTestCase.class:
 	javac UnitTestCase.java
 
 case: out UnitTestCase.class
-	java UnitTestCase test1 test2 test3 test4
+	java UnitTestCase test1 test2 test3 test4 test5
 
 et:
 	vim UnitTestCase.java

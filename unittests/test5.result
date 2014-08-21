@@ -1,0 +1,61 @@
+3: found keyword: fixed
+3: found id: GTGetConstructionProgress
+3: found keyword: int
+3: found id: player
+3: found keyword: string
+3: found id: desired
+3: found keyword: bool
+3: found id: incompleteOnly
+5: found integer: 1
+Error: syntax error, unexpected I_CONSTANT, expecting ',' or ';'
+     5 |1 2;
+...... !  ^
+7: found keyword: int
+7: found id: atos
+7: found keyword: int
+7: found id: a
+8: found keyword: bool
+8: found id: w
+8: found id: a
+8: found id: t
+8: found integer: 9
+9: found keyword: return
+9: found id: IntToString
+9: found id: a
+12: found keyword: typedef
+12: found keyword: int
+12: found id: int_nonola
+13: found keyword: const
+13: found keyword: fixed
+13: found id: caca
+13: found string: "asdf"
+14: found id: fsfs
+14: found integer: 1234
+14: found id: atos
+14: found integer: 3
+14: found integer: 4
+15: found id: ffs
+15: found integer: 12
+Error: syntax error, unexpected I_CONSTANT, expecting ',' or ';'
+    15 |int_nonola ffs = 12 34 + atos(3 4);
+...... !                     ^
+15: found id: atos
+15: found integer: 3
+Error: syntax error, unexpected I_CONSTANT, expecting ',' or ')'
+    15 |int_nonola ffs = 12 34 + atos(3 4);
+...... !                                ^
+17: found keyword: struct
+17: found keyword: struct
+Error: syntax error, unexpected STRUCT, expecting IDENTIFIER or '{'
+    17 |struct struct struuu {
+...... !            ^
+27: found keyword: int
+27: found keyword: string
+27: found keyword: int
+28: found keyword: if
+Error: syntax error, unexpected '{'
+    28 |if ( {) {
+...... !     ^
+
+Parsing failed
+Number of errors: 5

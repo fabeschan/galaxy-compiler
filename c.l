@@ -29,6 +29,7 @@ WS  [ \t\v\n\f]
 #include "c.y.hpp"
 using namespace std;
 int yycolumn = 1;
+std::string char_buffer;
 
 #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = linenum; \
     yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng - 1; \
@@ -69,8 +70,8 @@ digit [0-9]
 }
 <IN_COMMENT>{
 "*/"                    BEGIN(INITIAL);
-[^*\n]+                 // eat comment in chunks
-"*"                     // eat the lone star
+[^*\n]+                                                 // eat comment in chunks
+"*"                                                     // eat the lone star
 \n                      { ++linenum; yycolumn = 1; }
 }                       { /* return (COMMENT); */ }
 "//".*                  { /* consume //-comment */ }
@@ -167,7 +168,9 @@ digit [0-9]
 "?"                 { return '?'; }
 
 [ \t\v\f]           { /* whitespace separates tokens */ }
-[ \n]               { ++linenum; yycolumn = 1; }
+\n.*                { char_buffer = string(yytext+1); /* save the next line */
+                      yyless(1); ++linenum; yycolumn = 1; /* give back all but the \n to rescan */
+                    }
 .                   { yyterminate(); /* not sure: terminate or skip bad characters */ }
 
 %%
