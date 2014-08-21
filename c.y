@@ -81,7 +81,7 @@ void foundtoken(const char *s, const char *p);
 %left     LEFT_OP RIGHT_OP
 %left     '+' '-'
 %left     '*' '/' '%'
-/* %right    '+' '-' '~' '!' */
+%right    UNARY_OPERATOR
 
 
 %%
@@ -121,7 +121,7 @@ argument_expression_list
 
 unary_expression
     : postfix_expression
-    | unary_operator unary_expression { $$ = new NUnaryOperator($1, *$2); }
+    | unary_operator unary_expression %prec UNARY_OPERATOR { $$ = new NUnaryOperator($1, *$2); }
     ;
 
 unary_operator
