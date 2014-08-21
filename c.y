@@ -107,7 +107,7 @@ postfix_expression
     : primary_expression
     | postfix_expression '[' expression ']' { $$ = new NSubscript(*$1, *$3); }
     | postfix_expression '(' ')' { $$ = new NMethodCall(*$<ident>1); }
-    | postfix_expression '(' argument_expression_list ')' { $$ = new NMethodCall(*$<ident>1, *$3); delete $3; }
+    | postfix_expression '(' argument_expression_list ')' { $$ = new NMethodCall(*$<ident>1, *$3); }
     | postfix_expression '.' identifier { $$ = new NMemberAccess(*$1, *$3); }
     ;
 
