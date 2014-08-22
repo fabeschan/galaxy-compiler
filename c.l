@@ -26,6 +26,7 @@ WS  [ \t\v\n\f]
 %{
 #include <iostream>
 #include "ast.hpp"
+#include "yyltype.hpp"
 #include "c.y.hpp"
 using namespace std;
 int yycolumn = 1;

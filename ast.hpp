@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include "yyltype.hpp"
 
 #ifndef AST_HPP
 #define AST_HPP
@@ -36,7 +37,11 @@ public:
     virtual ~Node() {}
 };
 
-class NExpression : public Node { };
+class NExpression : public Node {
+public:
+    YYLTYPE yylloc;
+    void save_location(YYLTYPE loc){ yylloc = loc; }
+};
 
 class NStatement : public Node { };
 

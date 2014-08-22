@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include "ast.hpp"
+#include "yyltype.hpp"
 
 // stuff from flex that bison needs to know about:
 extern "C" int yylex();
@@ -96,10 +97,10 @@ identifier
     ;
 
 primary_expression
-    : identifier { $$ = $<expr>1; }
-    | constant { $$ = $<expr>1; }
-    | string { $$ = $<expr>1; }
-    | '(' expression_list ')' { $$ = new NExpressionList(*$2); }
+    : identifier { $$ = $<expr>1; $$->save_location(@$); }
+    | constant { $$ = $<expr>1; $$->save_location(@$); }
+    | string { $$ = $<expr>1; $$->save_location(@$); }
+    | '(' expression_list ')' { $$ = new NExpressionList(*$2); $$->save_location(@$); }
     | error
     ;
 

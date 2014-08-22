@@ -12,7 +12,7 @@ int f(int s){
     return b == -c + -s - -c;
 }
 
-typedef int listInt;
+    typedef  int        listInt;
 listInt olist;
 void insert(listInt id, int index, int value);
 
