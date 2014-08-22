@@ -9,7 +9,7 @@ c.y.hpp c.y.cpp: c.y
 	bison -d -o c.y.cpp $^
 
 out: c.y.cpp c.l.cpp ast.hpp
-	g++ -ll -ly c.y.cpp c.l.cpp -o $@
+	g++ c.y.cpp c.l.cpp -o $@
 
 UnitTestCase.class:
 	javac UnitTestCase.java
