@@ -47,7 +47,7 @@ void foundtoken(const char *s, const char *p);
 
 /* Terminal symbols */
 %token<str>     IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL
-%token<str>     TYPEDEF_NAME
+%token<token>   TYPEDEF_NAME
 %token<token>   LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token<token>   '+' '-' '~' '!' '*' '/' '%' '<' '>' '&' '^' '|' '='
 %token<token>   AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
@@ -346,7 +346,7 @@ designator
     ;
 
 statement
-    : compound_statement
+    : compound_statement { $$ = new NExpressionStatement(*$<expr>1); }
     | expression_statement
     | selection_statement
     | iteration_statement
@@ -371,8 +371,8 @@ block_item
     ;
 
 expression_statement
-    : ';'
-    | expression_list ';'
+    : ';' { $$ = NULL; }
+    | expression_list ';' { $$ = new NExpressionStatement(*$<expr>1); }
     ;
 
 selection_statement
