@@ -48,6 +48,7 @@ void foundtoken(const char *s, const char *p);
 %token<str>     IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL
 %token<str>     TYPEDEF_NAME
 %token<token>   LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
+%token<token>   '+' '-' '~' '!' '*' '/' '%' '<' '>' '&' '^' '|' '='
 %token<token>   AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
 %token<token>   SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
 %token<token>   XOR_ASSIGN OR_ASSIGN
@@ -62,7 +63,7 @@ void foundtoken(const char *s, const char *p);
 %type<block>    block_item_list compound_statement
 %type<token>    unary_operator assignment_operator binary_operator type_specifier
 %type<ident>    identifier
-%type<expr>     constant string include_directive
+%type<expr>     constant string include_directive error
 %type<expr>     primary_expression binary_expression
 %type<expr>     postfix_expression unary_expression assignment_expression
 %type<expr>     expression constant_expression
@@ -95,10 +96,10 @@ identifier
     ;
 
 primary_expression
-    : identifier
-    | constant
-    | string
-    | '(' expression_list ')'
+    : identifier { $$ = $<expr>1; }
+    | constant { $$ = $<expr>1; }
+    | string { $$ = $<expr>1; }
+    | '(' expression_list ')' { $$ = new NExpressionList(*$2); }
     | error
     ;
 

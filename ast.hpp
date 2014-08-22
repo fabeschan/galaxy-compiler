@@ -16,6 +16,7 @@ class Node;
         class NSubscript;
         class NMemberAccess;
         class NIncludeDirective;
+        class NExpressionList;
     class NStatement;   //<stmt> stmt var_decl func_decl
         class NExpressionStatement;
         class NVariableDeclaration; //<varvec> func_decl_args
@@ -114,6 +115,12 @@ class NIncludeDirective : public NExpression {
 public:
     NString& file;
     NIncludeDirective(NString& file) : file(file) { }
+};
+
+class NExpressionList : public NExpression {
+public:
+    ExpressionList& list;
+    NExpressionList(ExpressionList& list) : list(list) { }
 };
 
 class NBlock : public NExpression {
