@@ -2,6 +2,9 @@
 #include <vector>
 #include <string>
 
+#ifndef AST_HPP
+#define AST_HPP
+
 class Node;
     class NExpression; //<expr> numeric expr <exprvec> call_args
         class NInteger;
@@ -157,3 +160,5 @@ public:
             const VariableList& arguments, NBlock& block) :
         type(type), id(id), arguments(arguments), block(block) { }
 };
+
+#endif

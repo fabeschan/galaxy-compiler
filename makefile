@@ -8,8 +8,8 @@ c.l.cpp: c.l c.y.hpp
 c.y.hpp c.y.cpp: c.y
 	bison -d -o c.y.cpp $^
 
-out: c.y.cpp c.l.cpp
-	g++ -ll -ly $^ -o $@
+out: c.y.cpp c.l.cpp ast.hpp
+	g++ -ll -ly c.y.cpp c.l.cpp -o $@
 
 UnitTestCase.class:
 	javac UnitTestCase.java
