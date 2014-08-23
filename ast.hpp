@@ -142,10 +142,11 @@ public:
 class NSelectionStatement : public NStatement {
 public:
     ExpressionList* condition;
+    int op; // IF or WHILE
     NStatement* thenStmt;
     NStatement* elseStmt;
-    NSelectionStatement(ExpressionList* condition, NStatement* thenStmt, NStatement* elseStmt) : 
-        condition(condition), thenStmt(thenStmt), elseStmt(elseStmt) { }
+    NSelectionStatement(int op, ExpressionList* condition, NStatement* thenStmt, NStatement* elseStmt) : 
+        op(op), condition(condition), thenStmt(thenStmt), elseStmt(elseStmt) { }
 };
 
 class NExpressionStatement : public NStatement {

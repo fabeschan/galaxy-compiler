@@ -376,12 +376,12 @@ expression_statement
     ;
 
 selection_statement
-    : IF '(' expression_list ')' statement ELSE statement { $$ = new NSelectionStatement($3, $5, $7); }
-    | IF '(' expression_list ')' statement { $$ = new NSelectionStatement($3, $5, NULL); }
+    : IF '(' expression_list ')' statement ELSE statement { $$ = new NSelectionStatement($1, $3, $5, $7); }
+    | IF '(' expression_list ')' statement { $$ = new NSelectionStatement($1, $3, $5, NULL); }
     ;
 
 iteration_statement
-    : WHILE '(' expression_list ')' statement
+    : WHILE '(' expression_list ')' statement { $$ = new NSelectionStatement($1, $3, $5, NULL); }
     ;
 
 jump_statement
