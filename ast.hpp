@@ -25,6 +25,7 @@ class Node;
         class NExpressionStatement;
         class NVariableDeclaration; //<varvec> func_decl_args
         class NFunctionDeclaration;
+        class NSelectionStatement;
 
 typedef std::vector<NStatement*> StatementList;
 typedef std::vector<NExpression*> ExpressionList;
@@ -71,64 +72,64 @@ public:
 
 class NMethodCall : public NExpression {
 public:
-    const NIdentifier& id;
-    ExpressionList arguments;
-    NMethodCall(const NIdentifier& id, ExpressionList& arguments) :
+    const NIdentifier* id;
+    ExpressionList* arguments;
+    NMethodCall(const NIdentifier* id, ExpressionList* arguments) :
         id(id), arguments(arguments) { }
-    NMethodCall(const NIdentifier& id) : id(id) { }
+    NMethodCall(const NIdentifier* id) : id(id) { }
 };
 
 class NBinaryOperator : public NExpression {
 public:
     int op;
-    NExpression& lhs;
-    NExpression& rhs;
-    NBinaryOperator(NExpression& lhs, int op, NExpression& rhs) :
+    NExpression* lhs;
+    NExpression* rhs;
+    NBinaryOperator(NExpression* lhs, int op, NExpression* rhs) :
         lhs(lhs), rhs(rhs), op(op) { }
 };
 
 class NUnaryOperator : public NExpression {
 public:
     int op;
-    NExpression& rhs;
-    NUnaryOperator(int op, NExpression& rhs) :
+    NExpression* rhs;
+    NUnaryOperator(int op, NExpression* rhs) :
         rhs(rhs), op(op) { }
 };
 
 class NAssignment : public NExpression {
 public:
-    NIdentifier& lhs;
-    NExpression& rhs;
-    NAssignment(NIdentifier& lhs, NExpression& rhs) : 
+    NIdentifier* lhs;
+    NExpression* rhs;
+    NAssignment(NIdentifier* lhs, NExpression* rhs) : 
         lhs(lhs), rhs(rhs) { }
 };
 
 class NSubscript : public NExpression {
 public:
-    NExpression& lhs;
-    ExpressionList rhs;
-    NSubscript(NExpression& lhs, ExpressionList& rhs) : 
+    NExpression* lhs;
+    ExpressionList* rhs;
+    NSubscript(NExpression* lhs, ExpressionList* rhs) : 
         lhs(lhs), rhs(rhs) { }
 };
 
 class NMemberAccess : public NExpression {
 public:
-    NExpression& lhs;
-    NIdentifier& rhs;
-    NMemberAccess(NExpression& lhs, NIdentifier& rhs) : 
+    NExpression* lhs;
+    NIdentifier* rhs;
+    NMemberAccess(NExpression* lhs, NIdentifier* rhs) : 
         lhs(lhs), rhs(rhs) { }
 };
 
 class NIncludeDirective : public NExpression {
 public:
-    NString& file;
-    NIncludeDirective(NString& file) : file(file) { }
+    NString* file;
+    NIncludeDirective(NString* file) : file(file) { }
 };
 
 class NExpressionList : public NExpression {
 public:
-    ExpressionList& list;
-    NExpressionList(ExpressionList& list) : list(list) { }
+    ExpressionList* list;
+    NExpressionList(ExpressionList* list) : list(list) { }
 };
 
 class NBlock : public NExpression {
@@ -137,32 +138,41 @@ public:
     NBlock() { }
 };
 
+class NSelectionStatement : public NStatement {
+public:
+    ExpressionList* condition;
+    NStatement* thenStmt;
+    NStatement* elseStmt;
+    NSelectionStatement(ExpressionList* condition, NStatement* thenStmt, NStatement* elseStmt) : 
+        condition(condition), thenStmt(thenStmt), elseStmt(elseStmt) { }
+};
+
 class NExpressionStatement : public NStatement {
 public:
-    NExpression& expression;
-    NExpressionStatement(NExpression& expression) : 
+    NExpression* expression;
+    NExpressionStatement(NExpression* expression) : 
         expression(expression) { }
 };
 
 class NVariableDeclaration : public NStatement {
 public:
-    const NIdentifier& type;
-    NIdentifier& id;
+    const NIdentifier* type;
+    NIdentifier* id;
     NExpression *assignmentExpr;
-    NVariableDeclaration(const NIdentifier& type, NIdentifier& id) :
+    NVariableDeclaration(const NIdentifier* type, NIdentifier* id) :
         type(type), id(id) { }
-    NVariableDeclaration(const NIdentifier& type, NIdentifier& id, NExpression *assignmentExpr) :
+    NVariableDeclaration(const NIdentifier* type, NIdentifier* id, NExpression *assignmentExpr) :
         type(type), id(id), assignmentExpr(assignmentExpr) { }
 };
 
 class NFunctionDeclaration : public NStatement {
 public:
-    const NIdentifier& type;
-    const NIdentifier& id;
-    VariableList arguments;
-    NBlock& block;
-    NFunctionDeclaration(const NIdentifier& type, const NIdentifier& id, 
-            const VariableList& arguments, NBlock& block) :
+    const NIdentifier* type;
+    const NIdentifier* id;
+    VariableList* arguments;
+    NBlock* block;
+    NFunctionDeclaration(const NIdentifier* type, const NIdentifier* id, 
+            VariableList* arguments, NBlock* block) :
         type(type), id(id), arguments(arguments), block(block) { }
 };
 

@@ -100,7 +100,7 @@ primary_expression
     : identifier { $$ = $<expr>1; $$->save_location(@$); }
     | constant { $$ = $<expr>1; $$->save_location(@$); }
     | string { $$ = $<expr>1; $$->save_location(@$); }
-    | '(' expression_list ')' { $$ = new NExpressionList(*$2); $$->save_location(@$); }
+    | '(' expression_list ')' { $$ = new NExpressionList($2); $$->save_location(@$); }
     | error
     ;
 
@@ -115,10 +115,10 @@ string
 
 postfix_expression
     : primary_expression
-    | postfix_expression '[' expression_list ']' { $$ = new NSubscript(*$1, *$3); }
-    | postfix_expression '(' ')' { $$ = new NMethodCall(*$<ident>1); }
-    | postfix_expression '(' argument_expression_list ')' { $$ = new NMethodCall(*$<ident>1, *$3); }
-    | postfix_expression '.' identifier { $$ = new NMemberAccess(*$1, *$3); }
+    | postfix_expression '[' expression_list ']' { $$ = new NSubscript($1, $3); }
+    | postfix_expression '(' ')' { $$ = new NMethodCall($<ident>1); }
+    | postfix_expression '(' argument_expression_list ')' { $$ = new NMethodCall($<ident>1, $3); }
+    | postfix_expression '.' identifier { $$ = new NMemberAccess($1, $3); }
     ;
 
 argument_expression_list
@@ -128,7 +128,7 @@ argument_expression_list
 
 unary_expression
     : postfix_expression
-    | unary_operator unary_expression %prec UNARY_OPERATOR { $$ = new NUnaryOperator($1, *$2); }
+    | unary_operator unary_expression %prec UNARY_OPERATOR { $$ = new NUnaryOperator($1, $2); }
     ;
 
 unary_operator
@@ -152,12 +152,12 @@ binary_operator
 
 binary_expression
     : unary_expression
-    | binary_expression binary_operator unary_expression { $$ = new NBinaryOperator(*$1, $2, *$3); }
+    | binary_expression binary_operator unary_expression { $$ = new NBinaryOperator($1, $2, $3); }
     ;
 
 assignment_expression
     : binary_expression
-    | unary_expression assignment_operator assignment_expression { $$ = new NBinaryOperator(*$1, $2, *$3); }
+    | unary_expression assignment_operator assignment_expression { $$ = new NBinaryOperator($1, $2, $3); }
     ;
 
 assignment_operator
@@ -346,7 +346,7 @@ designator
     ;
 
 statement
-    : compound_statement { $$ = new NExpressionStatement(*$<expr>1); }
+    : compound_statement { $$ = new NExpressionStatement($<expr>1); }
     | expression_statement
     | selection_statement
     | iteration_statement
@@ -354,7 +354,7 @@ statement
     ;
 
 compound_statement
-    : '{' '}' { $$ = new NBlock(); }
+    : '{' '}' { $$ = NULL; }
     | '{'  block_item_list '}' { $$ = $2; }
     ;
 
@@ -372,7 +372,7 @@ block_item
 
 expression_statement
     : ';' { $$ = NULL; }
-    | expression_list ';' { $$ = new NExpressionStatement(*$<expr>1); }
+    | expression_list ';' { $$ = new NExpressionStatement($<expr>1); }
     ;
 
 selection_statement
@@ -396,7 +396,7 @@ program
     ;
 
 include_directive
-    : INCLUDE string { $$ = new NIncludeDirective(*$<nstr>2); }
+    : INCLUDE string { $$ = new NIncludeDirective($<nstr>2); }
     ;
 
 function_definition
