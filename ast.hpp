@@ -40,8 +40,9 @@ public:
 
 class NExpression : public Node {
 public:
-    YYLTYPE yylloc;
-    void save_location(YYLTYPE loc){ yylloc = loc; }
+    YYLTYPE* yylloc;
+    void save_location(YYLTYPE loc){ yylloc = new YYLTYPE(loc); }
+    NExpression() : yylloc(NULL) { }
 };
 
 class NStatement : public Node { };
