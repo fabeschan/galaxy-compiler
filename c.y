@@ -348,7 +348,7 @@ designator
 statement
     : compound_statement { $$ = new NExpressionStatement($<expr>1); }
     | expression_statement
-    | selection_statement
+    | selection_statement { $$ = $<stmt>1; }
     | iteration_statement
     | jump_statement
     ;
@@ -376,8 +376,8 @@ expression_statement
     ;
 
 selection_statement
-    : IF '(' expression_list ')' statement ELSE statement
-    | IF '(' expression_list ')' statement
+    : IF '(' expression_list ')' statement ELSE statement { $$ = new NSelectionStatement($3, $5, $7); }
+    | IF '(' expression_list ')' statement { $$ = new NSelectionStatement($3, $5, NULL); }
     ;
 
 iteration_statement
