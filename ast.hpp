@@ -36,6 +36,8 @@ using namespace std;
 class Node {
 public:
     virtual ~Node() {}
+    virtual string to_string() { return ""; }
+    virtual const char* c_str() {return this->to_string().c_str(); }
 };
 
 class NExpression : public Node {
@@ -51,6 +53,9 @@ class NInteger : public NExpression {
 public:
     int value;
     NInteger(int value) : value(value) { }
+    string to_string(){
+        return std::to_string(value);
+    }
 };
 
 class NFixed : public NExpression {
@@ -73,11 +78,12 @@ public:
 
 class NMethodCall : public NExpression {
 public:
-    const NIdentifier* id;
+    NExpression* expr;
     ExpressionList* arguments;
-    NMethodCall(const NIdentifier* id, ExpressionList* arguments) :
-        id(id), arguments(arguments) { }
-    NMethodCall(const NIdentifier* id) : id(id) { }
+    NMethodCall(NExpression* expr, ExpressionList* arguments) :
+        expr(expr), arguments(arguments) {
+        if (!arguments) arguments = new ExpressionList();
+    }
 };
 
 class NBinaryOperator : public NExpression {

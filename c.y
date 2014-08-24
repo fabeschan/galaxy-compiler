@@ -116,9 +116,24 @@ string
 postfix_expression
     : primary_expression
     | postfix_expression '[' expression_list ']' { $$ = new NSubscript($1, $3); }
-    | postfix_expression '(' ')' { $$ = new NMethodCall($<ident>1); }
-    | postfix_expression '(' argument_expression_list ')' { $$ = new NMethodCall($<ident>1, $3); }
-    | postfix_expression '.' identifier { $$ = new NMemberAccess($1, $3); }
+    | postfix_expression '(' ')' {
+        $$ = new NMethodCall($1, NULL);
+        /* if (NMemberAccess* ma = dynamic_cast<NMemberAccess*>($1))
+            printf("NMet: %s()\n", ma->rhs->name.c_str());
+            */
+    }
+    | postfix_expression '(' argument_expression_list ')' {
+        $$ = new NMethodCall($1, $3);
+        /*if (NMemberAccess* ma = dynamic_cast<NMemberAccess*>($1))
+            printf("NMet: %s()\n", ma->rhs->name.c_str());
+            */
+    }
+    | postfix_expression '.' identifier {
+        $$ = new NMemberAccess($1, $3);
+        /*if (NIdentifier* id = dynamic_cast<NIdentifier*>($1))
+            printf("NMem: %s.%s\n", id->name.c_str(), $3->name.c_str());
+            */
+    }
     ;
 
 argument_expression_list
@@ -380,7 +395,7 @@ selection_statement
     | IF '(' expression_list ')' statement { $$ = new NSelectionStatement($1, $3, $5, NULL); }
     ;
 
-iteration_statement
+iteration_statement /* returns a selection statement */
     : WHILE '(' expression_list ')' statement { $$ = new NSelectionStatement($1, $3, $5, NULL); }
     ;
 
