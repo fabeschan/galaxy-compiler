@@ -445,6 +445,7 @@ int main(int argc, char *argv[]) {
 
     cout << "Number of errors: " << parse_error_count << endl;
     fclose(myfile);
+
     return 0;
 }
 
